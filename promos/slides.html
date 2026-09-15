@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<!-- handmade: hand-tuned deck -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Yo — Plugin Store promos</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    /* The palette is the app icon's: a steel-blue tile under cool-white line art.
+       --accent, --accent-light and --off-white keep their names because the
+       control-panel screenshot cards below are shared with the family's other decks
+       and only ever reach for those three. --blue held a teal under the name --gold
+       in the marigold deck; both the name and the hue are now the icon's. */
+    --ink: #13283c;
+    --ink-light: #1b3550;
+    --ink-lighter: #274664;
+    --accent: #7aa2c8;
+    --accent-light: #a7c6e0;
+    --blue: #33608a;
+    --off-white: #eaf6ff;
+  }
+
+  html { background: #000; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--off-white);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- slide shell ---------------------------------------------------- */
+  .slide {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 85% 15%, rgba(122, 162, 200, 0.22) 0%, transparent 40%),
+      radial-gradient(ellipse at 65% 5%,  rgba(167, 198, 224, 0.14) 0%, transparent 35%),
+      radial-gradient(ellipse at 15% 85%, rgba(51, 96, 138, 0.16) 0%, transparent 40%),
+      radial-gradient(ellipse at 35% 95%, rgba(122, 162, 200, 0.09) 0%, transparent 35%),
+      linear-gradient(135deg, #0e1e2d 0%, #162e44 30%, #1b3550 60%, #0e1e2d 100%);
+  }
+
+  /* Oversized watermark, echoing the app icon */
+  .slide::after {
+    content: '';
+    position: absolute;
+    top: -18%;
+    left: -12%;
+    width: 1180px;
+    height: 1180px;
+    background: url('assets/watermark.svg') no-repeat center / contain;
+    /* Lower than the marigold deck's 0.05: that watermark was four solid shapes, this one
+       is ~60 open strokes, and line work of that density reads louder at the same alpha. */
+    opacity: 0.04;
+    pointer-events: none;
+  }
+
+  /* Hairline along the top edge */
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--blue), var(--accent), var(--accent-light), var(--blue));
+    z-index: 5;
+  }
+
+  .inner {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    padding: 118px 130px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ---- type ------------------------------------------------------------ */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(234, 246, 255, 0.62);
+    margin-bottom: 34px;
+  }
+  .eyebrow .rule {
+    width: 58px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-light);
+  }
+
+  h1, h2 {
+    font-family: 'Jersey 20', sans-serif;
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: 0.005em;
+  }
+
+  .gradient-text {
+    background: linear-gradient(100deg, #7aa2c8 0%, #a7c6e0 34%, #eaf6ff 62%, #7aa2c8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .lede {
+    font-size: 34px;
+    line-height: 1.5;
+    color: rgba(234, 246, 255, 0.72);
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+
+  /* ---- cover slide ----------------------------------------------------- */
+  .cover .inner { gap: 90px; }
+  .cover .copy { flex: 1 1 auto; }
+  .cover h1 { font-size: 210px; margin-bottom: 26px; }
+  .cover .tagline {
+    font-family: 'Jersey 20', sans-serif;
+    font-size: 60px;
+    line-height: 1.02;
+    color: var(--off-white);
+    margin-bottom: 40px;
+    max-width: 15ch;
+  }
+  .cover .lede { max-width: 27ch; font-size: 30px; }
+
+  .cover .mark {
+    flex: 0 0 auto;
+    width: 460px;
+    height: 460px;
+    filter: drop-shadow(14px 14px 0 rgba(0, 0, 0, 0.35));
+  }
+  .cover .mark img { width: 100%; height: 100%; display: block; }
+
+  .badges { display: flex; gap: 16px; margin-top: 52px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 26px;
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(234, 246, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+  }
+  .badge .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent-light);
+  }
+
+  /* ---- the before/after statement -------------------------------------- */
+  .statement .inner { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  .statement .eyebrow { justify-content: center; }
+  .swap { display: flex; flex-direction: column; align-items: center; gap: 22px; margin-top: 8px; }
+  .swap .caption {
+    font-size: 26px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(234, 246, 255, 0.42);
+  }
+  .swap .before {
+    font-size: 92px;
+    color: rgba(234, 246, 255, 0.34);
+    letter-spacing: 0.02em;
+  }
+  .swap .arrow {
+    width: 4px;
+    height: 62px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, rgba(51, 96, 138, 0.15), var(--accent-light));
+    position: relative;
+  }
+  .swap .arrow::after {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: -4px;
+    width: 18px; height: 18px;
+    transform: translateX(-50%) rotate(45deg);
+    border-right: 4px solid var(--accent-light);
+    border-bottom: 4px solid var(--accent-light);
+    border-radius: 2px;
+  }
+  .swap .after {
+    font-size: 150px;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+  .statement .lede { margin-top: 40px; max-width: 34ch; font-size: 32px; }
+
+  /* ---- feature slides -------------------------------------------------- */
+  .feature .inner { align-items: center; }
+  .feature .copy { width: 780px; flex: 0 0 780px; }
+  .feature h2 { font-size: 108px; margin-bottom: 30px; }
+  .feature .lede { max-width: 21ch; }
+
+  .points {
+    list-style: none;
+    margin-top: 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 25px;
+    line-height: 1.4;
+    color: rgba(234, 246, 255, 0.6);
+  }
+  .points li .tick {
+    flex: 0 0 auto;
+    margin-top: 9px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent-light);
+  }
+
+  /* Right-hand panel shared by the token, bucket, flow and table slides */
+  .panel {
+    position: absolute;
+    top: 50%;
+    left: 900px;
+    right: 130px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* ---- format tokens --------------------------------------------------- */
+  .token-row {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 34px 38px;
+    border-radius: 16px;
+    background: rgba(27, 53, 80, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .token-row .fmt { font-size: 32px; color: rgba(234, 246, 255, 0.55); flex: 1 1 auto; }
+  .token-row .to { color: var(--accent-light); font-size: 30px; flex: 0 0 auto; }
+  .token-row .val { font-size: 34px; color: var(--off-white); flex: 0 0 auto; }
+
+  /* ---- reset buckets --------------------------------------------------- */
+  .buckets { display: flex; gap: 22px; }
+  .bucket {
+    flex: 1 1 0;
+    padding: 38px 30px;
+    border-radius: 18px;
+    background: rgba(27, 53, 80, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+  }
+  .bucket .period {
+    font-size: 26px;
+    letter-spacing: 0.1em;
+    color: rgba(234, 246, 255, 0.5);
+    margin-bottom: 20px;
+  }
+  .bucket .count {
+    font-family: 'Jersey 20', sans-serif;
+    font-size: 92px;
+    line-height: 1;
+    color: var(--accent-light);
+  }
+  .bucket .label { font-size: 21px; color: rgba(234, 246, 255, 0.4); margin-top: 16px; }
+  .bucket.fresh .count { color: var(--off-white); }
+
+  .note {
+    font-size: 24px;
+    line-height: 1.5;
+    color: rgba(234, 246, 255, 0.45);
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  /* ---- allocation flow -------------------------------------------------- */
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    padding: 28px 34px;
+    border-radius: 16px;
+    background: rgba(27, 53, 80, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .step .num {
+    flex: 0 0 auto;
+    width: 58px; height: 58px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    background: var(--accent);
+    font-family: 'Jersey 20', sans-serif;
+    font-size: 38px;
+    color: #fff;
+  }
+  .step .label { display: block; font-size: 29px; font-weight: 600; color: var(--off-white); }
+  .step .sub { display: block; font-size: 21px; color: rgba(234, 246, 255, 0.55); margin-top: 6px; }
+
+  .lock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    font-size: 23px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(234, 246, 255, 0.42);
+  }
+  .lock .bar { flex: 1 1 auto; height: 1px; background: rgba(255,255,255,0.1); }
+
+  /* ---- backfill table --------------------------------------------------- */
+  .sheet {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+  }
+  .sheet .head {
+    display: flex;
+    padding: 26px 38px;
+    background: rgba(122, 162, 200, 0.18);
+    font-size: 22px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(234, 246, 255, 0.6);
+  }
+  .sheet .row {
+    display: flex;
+    padding: 26px 38px;
+    background: rgba(27, 53, 80, 0.55);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 31px;
+  }
+  .sheet .c1 { flex: 0 0 300px; color: rgba(234, 246, 255, 0.4); }
+  .sheet .c2 { flex: 0 0 70px; color: var(--accent-light); }
+  .sheet .c3 { flex: 1 1 auto; color: var(--off-white); }
+
+  /* ---- terminal --------------------------------------------------------- */
+  .term {
+    position: absolute;
+    top: 50%;
+    left: 900px;
+    right: -110px;
+    transform: translateY(-50%);
+    border-radius: 14px; overflow: hidden; box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.08); }
+  .term .chrome {
+    height: 44px;
+    background: #20364b;
+    background-image:
+      radial-gradient(circle at 26px 22px, #ff5f57 6.5px, transparent 7px),
+      radial-gradient(circle at 52px 22px, #ffbd2e 6.5px, transparent 7px),
+      radial-gradient(circle at 78px 22px, #28ca42 6.5px, transparent 7px);
+  }
+  .term .body {
+    background: #0e1e2d;
+    padding: 42px 44px;
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 25px;
+    line-height: 2.0;
+  }
+  .term .prompt { color: var(--accent-light); }
+  .term .cmd { color: var(--off-white); }
+  .term .out { color: rgba(234, 246, 255, 0.45); }
+  .term .ok { color: #4ade80; }
+  .term .warn { color: var(--accent-light); }
+  .term .blank { display: block; height: 20px; }
+
+  /* ---- footer lockup --------------------------------------------------- */
+  .footer {
+    position: absolute;
+    left: 130px;
+    bottom: 62px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    color: rgba(234, 246, 255, 0.4);
+  }
+  .footer img { width: 40px; height: 40px; border-radius: 9px; }
+  .footer b { color: rgba(234, 246, 255, 0.72); font-weight: 600; }
+
+  /* Only render the requested slide when screenshotting */
+  body.single .slide { display: none; }
+  body.single .slide.active { display: block; }
+
+  /* ---- control-panel screenshot cards -------------------------------
+     Self-contained: these cards must drop into any deck in the family, and the decks
+     do not share a class system. Only --accent and --off-white are relied on, both of
+     which every deck defines, and both have fallbacks. */
+  .slide.cpcard { display: block; }
+  .cpcard .cpc-inner {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    padding: 112px 120px;
+    display: flex;
+    align-items: center;
+    gap: 70px;
+  }
+  .cpcard .cpc-copy { width: 660px; flex: 0 0 660px; }
+
+  .cpcard .cpc-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 34px;
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent, #7aa2c8);
+  }
+  .cpcard .cpc-eyebrow i {
+    display: block;
+    width: 62px;
+    height: 3px;
+    background: var(--accent, #7aa2c8);
+    border-radius: 2px;
+  }
+
+  .cpcard .cpc-h2 {
+    font-family: 'Jersey 20', 'Inter', sans-serif;
+    font-size: 88px;
+    line-height: 0.96;
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    margin: 0 0 28px;
+    color: var(--off-white, #eaf6ff);
+  }
+
+  .cpcard .cpc-lede {
+    font-size: 33px;
+    line-height: 1.42;
+    color: rgba(234, 246, 255, 0.66);
+    margin: 0;
+  }
+
+  .cpcard .cpc-points { list-style: none; margin: 40px 0 0; padding: 0; }
+  .cpcard .cpc-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 26px;
+    line-height: 1.5;
+    color: rgba(234, 246, 255, 0.72);
+    margin-bottom: 18px;
+  }
+  .cpcard .cpc-points li::before {
+    content: '';
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    margin-top: 14px;
+    border-radius: 50%;
+    background: var(--accent, #7aa2c8);
+  }
+
+  .cpcard .cpc-panel { flex: 1 1 auto; min-width: 0; }
+
+  .cpcard .cpc-frame {
+    border-radius: 14px;
+    overflow: hidden;
+    background: #e4edf6;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55), 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+  .cpcard .cpc-chrome {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 18px;
+    background: linear-gradient(180deg, #20364b 0%, #16263a 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+  }
+  .cpcard .cpc-chrome b { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.16); }
+  .cpcard .cpc-chrome b:nth-child(1) { background: #ff5f57; }
+  .cpcard .cpc-chrome b:nth-child(2) { background: #febc2e; }
+  .cpcard .cpc-chrome b:nth-child(3) { background: #28c840; }
+  .cpcard .cpc-chrome em {
+    margin-left: 12px;
+    font-style: normal;
+    font-size: 19px;
+    letter-spacing: 0.02em;
+    color: rgba(234, 246, 255, 0.45);
+  }
+  .cpcard .cpc-frame img { display: block; width: 100%; height: auto; }
+
+  /* A tall capture is anchored to its top — the interesting rows are always first.
+     The fade makes the cut read as "there is more" rather than as a broken edge. */
+  .cpcard .cpc-frame.cpc-clip { max-height: 620px; position: relative; }
+  .cpcard .cpc-frame.cpc-clip img { object-fit: cover; object-position: top center; max-height: 580px; }
+  .cpcard .cpc-frame.cpc-clip::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 130px;
+    background: linear-gradient(180deg, rgba(228,237,246,0) 0%, rgba(228,237,246,0.92) 78%, #e4edf6 100%);
+  }
+
+  .cpcard .cpc-caption {
+    display: block;
+    margin-top: 20px;
+    font-size: 22px;
+    line-height: 1.45;
+    color: rgba(234, 246, 255, 0.52);
+  }
+  .cpcard .cpc-caption b { color: rgba(234, 246, 255, 0.80); font-weight: 600; }
+
+</style>
+</head>
+<body>
+
+<!-- 1 · Cover ============================================================ -->
+<section class="slide cover" data-n="1">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> A plugin for plugins</div>
+      <h1 class="gradient-text">Yo</h1>
+      <p class="tagline">A flash-message bus that plugins talk to.</p>
+      <p class="lede">One API for every plugin on the site. Types, buttons, recipients — and an answer to
+        &ldquo;did anybody actually see it?&rdquo;</p>
+      <div class="badges">
+        <span class="badge"><span class="dot"></span> Free &nbsp;·&nbsp; one edition</span>
+        <span class="badge">Craft 5.3+ · PHP 8.2+</span>
+      </div>
+    </div>
+    <div class="mark"><img src="assets/icon.svg" alt=""></div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 2 · The gap ========================================================== -->
+<section class="slide statement" data-n="2">
+  <div class="inner">
+    <div class="eyebrow"><span class="rule"></span> The whole idea</div>
+    <div class="swap">
+      <span class="caption">Craft&rsquo;s flash lasts</span>
+      <span class="before mono">one page load</span>
+      <span class="arrow"></span>
+      <span class="caption">A Yo lasts</span>
+      <span class="after mono gradient-text">until answered</span>
+    </div>
+    <p class="lede">And then tells the plugin that sent it whether it was shown, read, dismissed &mdash;
+      or which button somebody pressed.</p>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 3 · Types ============================================================ -->
+<section class="slide feature" data-n="3">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> One line, from anywhere</div>
+      <h2>Say it once,<br>properly</h2>
+      <p class="lede">Five types, each with its own colour, icon and whether it waits to be dismissed —
+        and a sixth, if your plugin wants one.</p>
+      <ul class="points">
+        <li><span class="tick"></span> Errors and warnings stick; a &ldquo;saved&rdquo; fades</li>
+        <li><span class="tick"></span> A dedupe key replaces the last one instead of stacking</li>
+        <li><span class="tick"></span> Buttons that link, post, or just say &ldquo;undo&rdquo;</li>
+      </ul>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="token-row mono"><span class="fmt">Yo::success(&lsquo;Saved.&rsquo;)</span><span class="to">&rarr;</span><span class="val">green &middot; fades</span></div>
+    <div class="token-row mono"><span class="fmt">Yo::error(&lsquo;API timed out.&rsquo;)</span><span class="to">&rarr;</span><span class="val">red &middot; sticks</span></div>
+    <div class="token-row mono"><span class="fmt">-&gt;to(&lsquo;group:editors&rsquo;)</span><span class="to">&rarr;</span><span class="val">the whole team</span></div>
+    <div class="token-row mono"><span class="fmt">-&gt;type(&lsquo;deployed&rsquo;)</span><span class="to">&rarr;</span><span class="val">one you registered</span></div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 4 · Adoption ========================================================= -->
+<section class="slide feature" data-n="4">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Before you write a line</div>
+      <h2>Every plugin<br>you already have</h2>
+      <p class="lede">Yo takes over Craft&rsquo;s own control panel notices. Thirty installed plugins, none of
+        them changed, all of them in the panel.</p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="step"><span class="num">1</span><span><b class="label">A plugin calls setNotice()</b><span class="sub">The one it has always called</span></span></div>
+    <div class="step"><span class="num">2</span><span><b class="label">Yo drains the flash first</b><span class="sub">Before the layout renders it, so it never appears twice</span></span></div>
+    <div class="step"><span class="num">3</span><span><b class="label">And catches the Ajax ones too</b><span class="sub">Those never touch the session — they are caught in the browser</span></span></div>
+    <div class="step"><span class="num">4</span><span><b class="label">It arrives in the panel</b><span class="sub">Typed, timed, dismissible, and labelled with who sent it</span></span></div>
+    <p class="note">On by default. Turn it off and Craft&rsquo;s own toasts come straight back.</p>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 5 · Channels ========================================================= -->
+<section class="slide feature" data-n="5">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Somewhere else</div>
+      <h2>Add a channel,<br>reach everything</h2>
+      <p class="lede">Write one class, register it from an event, and every plugin already sending messages
+        reaches Slack &mdash; without one of them changing.</p>
+      <ul class="points">
+        <li><span class="tick"></span> A broken channel is stepped over, never fatal</li>
+        <li><span class="tick"></span> Route by type, by sender, by anything</li>
+      </ul>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="lock"><span class="bar"></span> Channels::EVENT_REGISTER_CHANNELS <span class="bar"></span></div>
+    <div class="step"><span class="num">cp</span><span><b class="label">The floating panel</b><span class="sub">Queued by Yo, with receipts</span></span></div>
+    <div class="step"><span class="num">site</span><span><b class="label">Your front end</b><span class="sub">Your markup, your CSS</span></span></div>
+    <div class="step"><span class="num">log</span><span><b class="label">The Craft log</b><span class="sub">Twenty lines, and the worked example</span></span></div>
+    <div class="step"><span class="num">?</span><span><b class="label">Slack. E-mail. A webhook.</b><span class="sub">Yours, and every sender finds it for free</span></span></div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 6 · Receipts ========================================================= -->
+<section class="slide feature" data-n="6">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> Receipts</div>
+      <h2>Find out what<br>became of it</h2>
+      <p class="lede">Four events, each carrying the message and the <span class="mono">context</span> you set
+        when you sent it &mdash; so you can find whatever you were doing at the time.</p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="sheet mono">
+      <div class="head"><span class="c1">Event</span><span class="c2"></span><span class="c3">What you do with it</span></div>
+      <div class="row"><span class="c1">SHOWN</span><span class="c2">&rarr;</span><span class="c3">It reached a screen</span></div>
+      <div class="row"><span class="c1">READ</span><span class="c2">&rarr;</span><span class="c3">They opened it</span></div>
+      <div class="row"><span class="c1">DISMISSED</span><span class="c2">&rarr;</span><span class="c3">Stop asking</span></div>
+      <div class="row"><span class="c1">ACTIONED</span><span class="c2">&rarr;</span><span class="c3">Retry the import they pressed retry on</span></div>
+    </div>
+    <p class="note">A message with a button is a control surface, not a notification.</p>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 7 · Console ========================================================== -->
+<section class="slide feature" data-n="7">
+  <div class="inner">
+    <div class="copy">
+      <div class="eyebrow"><span class="rule"></span> From the CLI</div>
+      <h2>And from<br>your deploy script</h2>
+      <p class="lede">A console run has no current user, so address it &mdash; and Yo says so in the log
+        rather than pretending it went somewhere.</p>
+    </div>
+  </div>
+  <div class="term">
+    <div class="chrome"></div>
+    <div class="body">
+      <div><span class="prompt">$</span> <span class="cmd">php craft yo/say "Deploy finished" --type=success --to=group:editors</span></div>
+      <div class="out">Sent to <span class="ok">group:editors</span>.</div>
+      <span class="blank"></span>
+      <div><span class="prompt">$</span> <span class="cmd">php craft yo/channels</span></div>
+      <div class="out">cp &nbsp;&nbsp;&nbsp;&nbsp;Control panel &nbsp;(queued by Yo)</div>
+      <div class="out">site &nbsp;&nbsp;Front end &nbsp;(queued by Yo)</div>
+      <div class="out">slack &nbsp;Slack &nbsp;<span class="warn">(transport)</span></div>
+      <span class="blank"></span>
+      <div><span class="prompt">$</span> <span class="cmd">php craft yo/purge</span></div>
+      <div class="out">Purged 12 expired messages. <span class="ok">Nothing live was touched.</span></div>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 8 · control-panel screenshot ========================================= -->
+<section class="slide cpcard" data-n="8">
+  <div class="cpc-inner">
+    <div class="cpc-copy">
+      <div class="cpc-eyebrow"><i></i> In the control panel</div>
+      <h2 class="cpc-h2">He shouts from<br>the corner</h2>
+      <p class="cpc-lede">Five plugins, one panel. Drag it to any of six anchors and it stays there &mdash; for
+        you, and not for anybody else.</p>
+    </div>
+    <div class="cpc-panel">
+      <figure class="cpc-frame">
+        <div class="cpc-chrome"><b></b><b></b><b></b><em>The Yo panel</em></div>
+        <img src="shots/yo-panel.png" alt="">
+      </figure>
+      <span class="cpc-caption">The Yo panel floating over the Craft control panel dashboard, showing messages from four different plugins with their types, buttons and senders</span>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 9 · control-panel screenshot ========================================= -->
+<section class="slide cpcard" data-n="9">
+  <div class="cpc-inner">
+    <div class="cpc-copy">
+      <div class="cpc-eyebrow"><i></i> On the dashboard</div>
+      <h2 class="cpc-h2">And keeps<br>a list</h2>
+      <p class="cpc-lede">A widget of everything waiting, with the plugin that sent each one. Reading the
+        dashboard is not the same as dismissing what is on it.</p>
+    </div>
+    <div class="cpc-panel">
+      <figure class="cpc-frame cpc-clip">
+        <div class="cpc-chrome"><b></b><b></b><b></b><em>Yo dashboard widget</em></div>
+        <img src="shots/yo-widget.png" alt="">
+      </figure>
+      <span class="cpc-caption">The Yo dashboard widget listing the messages waiting for this person, each labelled with the plugin that sent it</span>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<!-- 10 · control-panel screenshot ======================================== -->
+<section class="slide cpcard" data-n="10">
+  <div class="cpc-inner">
+    <div class="cpc-copy">
+      <div class="cpc-eyebrow"><i></i> Settings</div>
+      <h2 class="cpc-h2">Every type,<br>every channel</h2>
+      <p class="cpc-lede">Including the ones other plugins registered. It is the fastest way to see what is
+        actually installed and talking.</p>
+    </div>
+    <div class="cpc-panel">
+      <figure class="cpc-frame cpc-clip">
+        <div class="cpc-chrome"><b></b><b></b><b></b><em>Yo settings</em></div>
+        <img src="shots/yo-settings.png" alt="">
+      </figure>
+      <span class="cpc-caption">The Yo settings screen listing the registered message types and delivery channels alongside the panel and front-end options</span>
+    </div>
+  </div>
+  <div class="footer"><img src="assets/icon.svg" alt=""> <b>Yo</b> &nbsp;·&nbsp; justinholt.com/plugins/craft-yo</div>
+</section>
+
+<script>
+  var n = new URLSearchParams(location.search).get('s');
+  if (n) {
+    document.body.classList.add('single');
+    var el = document.querySelector('.slide[data-n="' + n + '"]');
+    if (el) el.classList.add('active');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+{% import '_includes/forms.twig' as forms %}
+{% import 'yo/_mascot' as mascot %}
+
+{# No <form> anywhere in here. The plugin settings screen is already one, and a nested form is not
+   ignored by the parser — it is unwrapped, leaving its hidden action input sitting next to the
+   page's own. Two action inputs means Craft takes the last, and Save quietly runs whatever the
+   inner form was for. The "try it" button posts over DataStar instead. #}
+
+<div class="yo-settings-intro">
+    {{ mascot.alien('talking', 52) }}
+    <p>
+        {{ 'Yo is a message bus other plugins talk to. Anything installed here can send a message with one line of PHP, and it turns up in the panel — and, if you switch the front-end channel on, on your site.'|t('yo') }}
+    </p>
+</div>
+
+<h2>{{ 'The panel'|t('yo') }}</h2>
+
+{{ forms.lightswitchField({
+    label: 'Show the panel'|t('yo'),
+    instructions: 'Puts the floating panel on every control panel page. Off, messages still arrive — the dashboard widget and the front-end channel keep working — there is just nothing floating.'|t('yo'),
+    id: 'cpPanel',
+    name: 'cpPanel',
+    on: settings.cpPanel,
+}) }}
+
+{{ forms.selectField({
+    label: 'Where it starts'|t('yo'),
+    instructions: 'Anyone can drag it somewhere else, and where they drag it is remembered for them alone. This is the corner it starts in for somebody who never has.'|t('yo'),
+    id: 'defaultPosition',
+    name: 'defaultPosition',
+    options: positions,
+    value: settings.defaultPosition,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Keep him on screen when there is nothing to say'|t('yo'),
+    instructions: 'Off, the panel appears only when there is a message waiting.'|t('yo'),
+    id: 'idleMascot',
+    name: 'idleMascot',
+    on: settings.idleMascot,
+}) }}
+
+{{ forms.textField({
+    label: 'Check for new messages every'|t('yo'),
+    instructions: 'Seconds. 0 stops the panel polling at all, and messages then appear on the next page load.'|t('yo'),
+    id: 'pollInterval',
+    name: 'pollInterval',
+    value: settings.pollInterval,
+    size: 5,
+    type: 'number',
+}) }}
+
+{{ forms.textField({
+    label: 'Fade a message after'|t('yo'),
+    instructions: 'Seconds. Sticky messages ignore this and wait to be dismissed. Hovering one cancels its countdown for good.'|t('yo'),
+    id: 'autoDismissAfter',
+    name: 'autoDismissAfter',
+    value: settings.autoDismissAfter,
+    size: 5,
+    type: 'number',
+}) }}
+
+<hr>
+
+<h2>{{ 'Other plugins'|t('yo') }}</h2>
+
+{{ forms.lightswitchField({
+    label: 'Adopt Craft’s own notices'|t('yo'),
+    instructions: 'Every plugin that calls `setNotice()` or `setError()` shows up in the panel instead of Craft’s toast — with no change to any of them. This is the setting that makes Yo worth installing on a site whose plugins have never heard of it.'|t('yo'),
+    id: 'adoptCraftFlashes',
+    name: 'adoptCraftFlashes',
+    on: settings.adoptCraftFlashes,
+}) }}
+
+<div class="yo-registry">
+    <div class="yo-registry__col">
+        <h3>{{ 'Message types'|t('yo') }}</h3>
+        <ul class="yo-registry__list">
+            {% for type in types %}
+                <li>
+                    <span class="yo-registry__dot" style="background: {{ type.color }}"></span>
+                    <code>{{ type.handle }}</code>
+                    <span class="light">{{ type.label }}{{ type.sticky ? ' · ' ~ 'sticky'|t('yo') }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+        <p class="light">{{ 'A plugin can add its own from Types::EVENT_REGISTER_MESSAGE_TYPES.'|t('yo') }}</p>
+    </div>
+
+    <div class="yo-registry__col">
+        <h3>{{ 'Channels'|t('yo') }}</h3>
+        <ul class="yo-registry__list">
+            {% for channel in channels %}
+                <li>
+                    <code>{{ channel.handle() }}</code>
+                    <span class="light">{{ channel.label() }}{{ channel.isQueued() ? ' · ' ~ 'queued by Yo'|t('yo') : ' · ' ~ 'transport'|t('yo') }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+        <p class="light">{{ 'A plugin can add its own from Channels::EVENT_REGISTER_CHANNELS.'|t('yo') }}</p>
+    </div>
+</div>
+
+<hr>
+
+<h2>{{ 'The front end'|t('yo') }}</h2>
+
+{{ forms.lightswitchField({
+    label: 'Front-end channel'|t('yo'),
+    instructions: 'Lets messages reach your public templates. Off, nothing a plugin sends can ever appear on the site.'|t('yo'),
+    id: 'siteChannel',
+    name: 'siteChannel',
+    on: settings.siteChannel,
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Put the container in for me'|t('yo'),
+    instructions: 'Splices it before `</body>` on every front-end page. Off — the default — you place it yourself with `{{ craft.yo.init() }}`, which is almost always what you want, because where the messages sit is a design decision.'|t('yo'),
+    id: 'siteAutoInject',
+    name: 'siteAutoInject',
+    on: settings.siteAutoInject,
+}) }}
+
+{{ forms.textField({
+    label: 'Class prefix'|t('yo'),
+    instructions: 'Front-end markup is unstyled by design — these are the class names you hang your own CSS on. `yo-message`, `yo-message--error`, and so on.'|t('yo'),
+    id: 'siteClassPrefix',
+    name: 'siteClassPrefix',
+    value: settings.siteClassPrefix,
+    size: 12,
+}) }}
+
+<hr>
+
+<h2>{{ 'Housekeeping'|t('yo') }}</h2>
+
+{{ forms.textField({
+    label: 'Default time to live'|t('yo'),
+    instructions: 'Seconds a stored message stays offerable. 0 means forever. Expired ones go out with Craft’s own rubbish collection.'|t('yo'),
+    id: 'defaultTtl',
+    name: 'defaultTtl',
+    value: settings.defaultTtl,
+    size: 8,
+    type: 'number',
+}) }}
+
+{{ forms.textField({
+    label: 'Most messages one person can be holding'|t('yo'),
+    instructions: 'Past this, the oldest are dropped. A plugin in a loop should not be able to fill somebody’s screen.'|t('yo'),
+    id: 'maxPerRecipient',
+    name: 'maxPerRecipient',
+    value: settings.maxPerRecipient,
+    size: 5,
+    type: 'number',
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Write every message to the log'|t('yo'),
+    instructions: 'Switches the `log` channel on for everything, not just messages that asked for it.'|t('yo'),
+    id: 'logMessages',
+    name: 'logMessages',
+    on: settings.logMessages,
+}) }}
+
+<hr>
+
+<h2>{{ 'Try it'|t('yo') }}</h2>
+
+<p class="light">{{ 'Sends yourself one. Save any changes first — this uses the settings that are stored, not the ones on screen.'|t('yo') }}</p>
+
+<div class="yo-try">
+    {% for type in types %}
+        <button type="button" class="btn"
+                data-on-click="@post('{{ actionUrl('yo/stream/test', { type: type.handle }) }}', {headers: {'X-CSRF-Token': window.YoConfig.csrfTokenValue}})">
+            {{ type.label }}
+        </button>
+    {% endfor %}
+</div>
+
+<style>
+    .yo-settings-intro { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 22px; color: #e9a33a; }
+    .yo-settings-intro p { margin: 0; padding-top: 6px; color: inherit; }
+    .yo-settings-intro p { color: var(--text-color, #3f4d5a); }
+    .yo-registry { display: flex; gap: 32px; flex-wrap: wrap; margin: 18px 0 4px; }
+    .yo-registry__col { flex: 1 1 240px; }
+    .yo-registry__list { margin: 6px 0 8px; padding: 0; list-style: none; }
+    .yo-registry__list li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+    .yo-registry__dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+    .yo-try { display: flex; gap: 8px; flex-wrap: wrap; }
+</style>

@@ -1,0 +1,47 @@
+{# The front-end message list.
+
+   This is the fallback. Drop a `yo/_messages.twig` into your own templates directory and it wins
+   outright — same two variables, your markup, no plugin opinions to override.
+
+   What is here is deliberately plain: semantic elements, one class per thing, no inline styles and
+   no stylesheet behind it. `prefix` is the site's own class prefix from the settings, so the class
+   names can be made to match whatever the rest of the site is called. #}
+
+{% for message in messages %}
+    <div class="{{ prefix }}-message {{ prefix }}-message--{{ message.type }}"
+         data-yo-message
+         data-yo-uid="{{ message.uid }}"
+         data-yo-sticky="{{ message.sticky ? '1' : '0' }}"
+         data-yo-dismiss-url="{{ actionUrl('yo/stream/dismiss', { uid: message.uid, channel: 'site' }) }}"
+         role="status">
+
+        <p class="{{ prefix }}-message__title">{{ message.title }}</p>
+
+        {% if message.body %}
+            <p class="{{ prefix }}-message__text">{{ message.body }}</p>
+        {% endif %}
+
+        {% if message.actions %}
+            <p class="{{ prefix }}-message__actions">
+                {% for action in message.actions %}
+                    {% set actUrl = actionUrl('yo/stream/act', { uid: message.uid, key: action.key, channel: 'site' }) %}
+                    {% if action.url %}
+                        <a class="{{ prefix }}-message__action{{ action.primary ? ' ' ~ prefix ~ '-message__action--primary' }}"
+                           href="{{ action.url }}"
+                           data-on-click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</a>
+                    {% else %}
+                        <button type="button"
+                                class="{{ prefix }}-message__action{{ action.primary ? ' ' ~ prefix ~ '-message__action--primary' }}"
+                                {% if action.action %}data-yo-post="{{ actionUrl(action.action) }}" data-yo-params="{{ action.params|json_encode }}"{% endif %}
+                                data-on-click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</button>
+                    {% endif %}
+                {% endfor %}
+            </p>
+        {% endif %}
+
+        <button type="button"
+                class="{{ prefix }}-message__dismiss"
+                aria-label="{{ 'Dismiss'|t('yo') }}"
+                data-on-click="@post('{{ actionUrl('yo/stream/dismiss', { uid: message.uid, channel: 'site' }) }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">&times;</button>
+    </div>
+{% endfor %}

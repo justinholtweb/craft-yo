@@ -1,0 +1,71 @@
+{# The message list. Rendered into the page once, and again into every server-sent patch, from
+   `services\Panel::render()` — one implementation, so a patched message cannot look subtly unlike
+   the ones already on screen.
+
+   Every button posts through DataStar. The uid rides in the query string rather than the body
+   because DataStar posts *signals* as the body and nothing else — there is no "and also send
+   these fields" option, and inventing one by stuffing a signal per message would put the whole
+   list into the page's signal state. #}
+{% import 'yo/_mascot' as mascot %}
+
+{% set csrf = "{headers: {'X-CSRF-Token': window.YoConfig.csrfTokenValue}}" %}
+
+{% if messages is empty %}
+    <div class="yo-empty" data-yo-empty>
+        {{ mascot.alien('sleeping', 46) }}
+        <p class="yo-empty__line">{{ 'Nothing to report.'|t('yo') }}</p>
+        <p class="yo-empty__sub">{{ 'He’ll shout when something happens.'|t('yo') }}</p>
+    </div>
+{% else %}
+    <ul class="yo-list">
+        {% for message in messages %}
+            {% set dismissUrl = actionUrl('yo/stream/dismiss', { uid: message.uid }) %}
+            <li class="yo-message yo-message--{{ message.type }}{{ message.sticky ? ' yo-message--sticky' }}"
+                data-yo-message
+                data-yo-uid="{{ message.uid }}"
+                data-yo-sticky="{{ message.sticky ? '1' : '0' }}"
+                style="--yo-message-color: {{ message.color }}">
+                <span class="yo-message__mark" aria-hidden="true">{{ message.icon|raw }}</span>
+                <div class="yo-message__body">
+                    <p class="yo-message__title">{{ message.title }}</p>
+                    {% if message.body %}
+                        <p class="yo-message__text">{{ message.body }}</p>
+                    {% endif %}
+
+                    {% if message.actions %}
+                        <div class="yo-message__actions">
+                            {% for action in message.actions %}
+                                {% set actUrl = actionUrl('yo/stream/act', { uid: message.uid, key: action.key }) %}
+                                {% if action.url %}
+                                    <a class="yo-btn{{ action.primary ? ' yo-btn--primary' }}"
+                                       href="{{ action.url }}"
+                                       data-on-click="@post('{{ actUrl }}', {{ csrf }})">{{ action.label }}</a>
+                                {% else %}
+                                    <button type="button"
+                                            class="yo-btn{{ action.primary ? ' yo-btn--primary' }}"
+                                            {% if action.action %}data-yo-post="{{ actionUrl(action.action) }}" data-yo-params="{{ action.params|json_encode }}"{% endif %}
+                                            data-on-click="@post('{{ actUrl }}', {{ csrf }})">{{ action.label }}</button>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <p class="yo-message__meta">
+                        {% if message.plugin %}
+                            <span class="yo-message__sender">{{ message.plugin }}</span>
+                        {% endif %}
+                        <span class="yo-message__when" data-yo-time="{{ message.timestamp }}"></span>
+                        {% hook 'yo.message.meta' %}
+                    </p>
+                </div>
+                <button type="button"
+                        class="yo-message__dismiss"
+                        title="{{ 'Dismiss'|t('yo') }}"
+                        aria-label="{{ 'Dismiss'|t('yo') }}"
+                        data-on-click="@post('{{ dismissUrl }}', {{ csrf }})">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+                </button>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

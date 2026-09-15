@@ -1,0 +1,17 @@
+{% import '_includes/forms.twig' as forms %}
+
+{{ forms.textField({
+    label: 'How many to list'|t('yo'),
+    id: 'limit',
+    name: 'limit',
+    value: widget.limit,
+    size: 4,
+    type: 'number',
+}) }}
+
+{{ forms.lightswitchField({
+    label: 'Show which plugin sent each one'|t('yo'),
+    id: 'showSender',
+    name: 'showSender',
+    on: widget.showSender,
+}) }}

@@ -1,0 +1,36 @@
+{# The alien. Drawn rather than shipped as a file so it can inherit `currentColor` for the fur and
+   stay legible when somebody's control panel is in light mode.
+
+   `state` is one of: idle, talking, sleeping. It changes the eyes and the mouth and nothing else —
+   a mascot that redraws itself wholesale between states reads as two different characters. #}
+{% macro alien(state = 'idle', size = 34) %}
+    <svg class="yo-alien yo-alien--{{ state }}" width="{{ size }}" height="{{ size }}"
+         viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <g class="yo-alien__tufts">
+            <path d="M13 27 10 10l14 8Z"/>
+            <path d="M39 24 51.5 11 46 31Z"/>
+        </g>
+        <ellipse class="yo-alien__head" cx="30" cy="35" rx="21" ry="19"/>
+        <path class="yo-alien__cowlick" d="M28 17c1-6 6-7 7-11-5 1-8 4-9 8"/>
+        <ellipse class="yo-alien__snout" cx="35" cy="42" rx="13" ry="10"/>
+        <ellipse class="yo-alien__nose" cx="41" cy="40" rx="3.5" ry="2.8"/>
+        {% if state == 'sleeping' %}
+            <path class="yo-alien__lid" d="M17 29a6 6 0 0 0 10 0"/>
+            <path class="yo-alien__lid" d="M30 27a6 6 0 0 0 10 0"/>
+        {% else %}
+            <ellipse class="yo-alien__eye" cx="22" cy="29" rx="5.5" ry="6.5"/>
+            <ellipse class="yo-alien__eye" cx="35" cy="27" rx="5.5" ry="6.5"/>
+            <circle class="yo-alien__pupil" cx="23" cy="30" r="2.6"/>
+            <circle class="yo-alien__pupil" cx="36" cy="28" r="2.6"/>
+        {% endif %}
+        {% if state == 'talking' %}
+            <path class="yo-alien__mouth" d="M28 47c4 0 7 2.5 7 4.5S32 55 28 55s-6-1.5-6-3.5S24 47 28 47Z"/>
+            <g class="yo-alien__shout">
+                <path d="M53 30a12 12 0 0 1 0 16"/>
+                <path d="M59 25a20 20 0 0 1 0 26"/>
+            </g>
+        {% else %}
+            <path class="yo-alien__mouth yo-alien__mouth--shut" d="M23 50c3 2 8 2 11 0"/>
+        {% endif %}
+    </svg>
+{% endmacro %}

@@ -1,0 +1,344 @@
+/* Yo — the floating control panel panel.
+ *
+ * Everything is scoped under `.yo-panel` or prefixed `yo-`. The control panel is somebody else's
+ * document and a plugin that leaks a `.panel` or a `.badge` into it has broken a screen it will
+ * never see.
+ *
+ * The look is a small television from about 1987: a rounded aubergine set with rabbit ears, a
+ * screen with a faint scanline wash, and marigold for anything you can press. */
+
+.yo-panel {
+    --yo-ground: #2a1b36;
+    --yo-ground-lift: #382445;
+    --yo-screen: #17101e;
+    --yo-fur: #e9a33a;
+    --yo-fur-deep: #c97f27;
+    --yo-teal: #3fd0c9;
+    --yo-ink: #f4eef8;
+    --yo-ink-soft: #b9a9c6;
+    --yo-shadow: 0 18px 44px rgba(10, 4, 16, .48);
+
+    position: fixed;
+    z-index: 100;
+    width: 348px;
+    max-width: calc(100vw - 32px);
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--yo-ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* The six anchors. `transform` rather than a negative margin so the centre pair stay centred
+   when the panel is resized by its own content. */
+.yo-panel--top-left { top: 16px; left: 16px; }
+.yo-panel--top-right { top: 16px; right: 16px; }
+.yo-panel--top-center { top: 16px; left: 50%; transform: translateX(-50%); }
+.yo-panel--bottom-left { bottom: 16px; left: 16px; }
+.yo-panel--bottom-right { bottom: 16px; right: 16px; }
+.yo-panel--bottom-center { bottom: 16px; left: 50%; transform: translateX(-50%); }
+
+/* Dragging sets explicit coordinates and this class takes the anchor rules back off. */
+.yo-panel--dragging,
+.yo-panel--free { transform: none; }
+.yo-panel--dragging { transition: none; user-select: none; }
+
+.yo-set {
+    position: relative;
+    background: var(--yo-ground);
+    border: 2px solid rgba(255, 255, 255, .07);
+    border-radius: 18px;
+    box-shadow: var(--yo-shadow);
+}
+
+/* Rabbit ears. Sit above the set and are the one purely decorative thing here. */
+.yo-set__antenna {
+    position: absolute;
+    top: -22px;
+    left: 22px;
+    width: 60px;
+    height: 26px;
+    color: var(--yo-fur-deep);
+    fill: var(--yo-fur);
+    pointer-events: none;
+}
+
+.yo-panel--top-left .yo-set__antenna,
+.yo-panel--top-center .yo-set__antenna,
+.yo-panel--top-right .yo-set__antenna {
+    /* Upside down against the top of the window there is no room above the set, so the ears go
+       under it and point the other way. */
+    top: auto;
+    bottom: -22px;
+    transform: scaleY(-1);
+}
+
+/* ---- the bar --------------------------------------------------------------- */
+
+.yo-bar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 10px 9px 12px;
+    cursor: grab;
+    border-radius: 16px 16px 0 0;
+    background: linear-gradient(180deg, var(--yo-ground-lift), var(--yo-ground));
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+
+.yo-panel--dragging .yo-bar { cursor: grabbing; }
+
+.yo-bar__mascot { display: flex; color: var(--yo-fur); }
+
+.yo-bar__name {
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.yo-bar__count {
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: var(--yo-fur);
+    color: #2a1b36;
+    font-weight: 700;
+    font-size: 11px;
+    text-align: center;
+}
+
+.yo-bar__tools { margin-left: auto; display: flex; gap: 2px; }
+
+.yo-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--yo-ink-soft);
+    cursor: pointer;
+}
+
+.yo-icon-btn:hover { background: rgba(255, 255, 255, .08); color: var(--yo-ink); }
+.yo-icon-btn svg { width: 15px; height: 15px; }
+
+/* ---- move menu ------------------------------------------------------------- */
+
+/* `display: grid` beats the `hidden` attribute, which is only a UA-stylesheet `display: none`.
+   Without this rule the move menu is open on every page load. */
+.yo-move[hidden] { display: none; }
+
+.yo-move {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px;
+    background: var(--yo-ground-lift);
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+
+.yo-move__spot {
+    padding: 6px 4px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--yo-ink-soft);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.yo-move__spot:hover { border-color: var(--yo-fur); color: var(--yo-ink); }
+.yo-move__spot--on { background: var(--yo-fur); border-color: var(--yo-fur); color: #2a1b36; font-weight: 600; }
+
+/* ---- screen ---------------------------------------------------------------- */
+
+.yo-screen {
+    position: relative;
+    background: var(--yo-screen);
+    border-radius: 0 0 16px 16px;
+    overflow: hidden;
+}
+
+/* The scanline wash. Two pixels of nothing, repeated — cheap, and the whole reason the set reads
+   as a television rather than a card with a border. */
+.yo-screen__scan {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(180deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.yo-messages {
+    position: relative;
+    z-index: 1;
+    max-height: min(60vh, 460px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.yo-list { margin: 0; padding: 0; list-style: none; }
+
+/* ---- a message ------------------------------------------------------------- */
+
+.yo-message {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    padding: 12px 34px 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    animation: yo-in .22s ease-out both;
+}
+
+.yo-message::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--yo-message-color, var(--yo-teal));
+}
+
+.yo-message--leaving { animation: yo-out .18s ease-in both; }
+
+@keyframes yo-in { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes yo-out { to { opacity: 0; transform: translateX(14px); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .yo-message, .yo-message--leaving { animation: none; }
+}
+
+.yo-message__mark {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    margin-top: 1px;
+    color: var(--yo-message-color, var(--yo-teal));
+}
+
+.yo-message__mark svg { width: 100%; height: 100%; }
+
+.yo-message__body { min-width: 0; flex: 1; }
+.yo-message__title { margin: 0; font-weight: 600; }
+.yo-message__text { margin: 3px 0 0; color: var(--yo-ink-soft); }
+
+.yo-message__actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+
+.yo-btn {
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--yo-ink);
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.yo-btn:hover { border-color: var(--yo-fur); color: var(--yo-fur); }
+.yo-btn--primary { background: var(--yo-fur); border-color: var(--yo-fur); color: #2a1b36; font-weight: 600; }
+.yo-btn--primary:hover { background: var(--yo-fur-deep); border-color: var(--yo-fur-deep); color: #2a1b36; }
+
+.yo-message__meta {
+    margin: 8px 0 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: #7f6f8c;
+    font-size: 11px;
+}
+
+.yo-message__sender {
+    padding: 1px 5px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 5px;
+    text-transform: lowercase;
+}
+
+.yo-message__dismiss {
+    position: absolute;
+    top: 9px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #7f6f8c;
+    cursor: pointer;
+}
+
+.yo-message__dismiss:hover { background: rgba(255, 255, 255, .08); color: var(--yo-ink); }
+.yo-message__dismiss svg { width: 11px; height: 11px; }
+
+/* ---- empty ----------------------------------------------------------------- */
+
+.yo-empty {
+    padding: 26px 16px 22px;
+    text-align: center;
+    color: var(--yo-fur);
+}
+
+.yo-empty__line { margin: 8px 0 0; color: var(--yo-ink); font-weight: 600; }
+.yo-empty__sub { margin: 2px 0 0; color: #7f6f8c; font-size: 12px; }
+
+/* ---- foot ------------------------------------------------------------------ */
+
+.yo-foot {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-top: 1px solid rgba(255, 255, 255, .06);
+    background: var(--yo-ground);
+    border-radius: 0 0 16px 16px;
+}
+
+.yo-foot__clear {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--yo-ink-soft);
+    font-size: 11px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.yo-foot__clear:hover { color: var(--yo-fur); }
+.yo-foot__hook { margin-left: auto; }
+
+/* ---- the alien ------------------------------------------------------------- */
+
+.yo-alien__head, .yo-alien__tufts path { fill: currentColor; }
+.yo-alien__snout { fill: #c97f27; }
+.yo-alien__nose, .yo-alien__pupil { fill: #2a1b36; }
+.yo-alien__eye { fill: #fdf7ea; }
+.yo-alien__mouth { fill: #2a1b36; }
+.yo-alien__mouth--shut { fill: none; stroke: #2a1b36; stroke-width: 2; stroke-linecap: round; }
+.yo-alien__cowlick { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+.yo-alien__lid { fill: none; stroke: #2a1b36; stroke-width: 2; stroke-linecap: round; }
+.yo-alien__shout { fill: none; stroke: var(--yo-teal, #3fd0c9); stroke-width: 3.5; stroke-linecap: round; }
+
+/* One blink, on arrival. Any more and he is a distraction rather than a mascot. */
+.yo-alien--talking .yo-alien__shout { animation: yo-shout .5s ease-out 2; }
+
+@keyframes yo-shout { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .yo-alien--talking .yo-alien__shout { animation: none; }
+}
+
+/* Craft's light control panel: keep the set dark — it is a television, and a white television is
+   a microwave — but soften the shadow so it does not float over a pale page. */
+@media (prefers-color-scheme: light) {
+    .yo-panel { --yo-shadow: 0 14px 34px rgba(42, 27, 54, .26); }
+}

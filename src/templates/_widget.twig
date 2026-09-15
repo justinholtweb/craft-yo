@@ -1,0 +1,37 @@
+{# The dashboard widget. Shows what the panel is holding without taking any of it: opening the
+   dashboard is not the same as dismissing everything on it. #}
+{% import 'yo/_mascot' as mascot %}
+
+{% if messages is empty %}
+    <div class="yo-widget-empty">
+        {{ mascot.alien('sleeping', 40) }}
+        <p>{{ 'Nothing waiting.'|t('yo') }}</p>
+    </div>
+{% else %}
+    <ul class="yo-widget-list">
+        {% for message in messages %}
+            <li class="yo-widget-item" style="--yo-message-color: {{ message.color }}">
+                <span class="yo-widget-item__mark">{{ message.icon|raw }}</span>
+                <span class="yo-widget-item__body">
+                    <strong>{{ message.title }}</strong>
+                    {% if message.body %}<span class="light">{{ message.body }}</span>{% endif %}
+                </span>
+                {% if showSender and message.plugin %}
+                    <code class="yo-widget-item__from">{{ message.plugin }}</code>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<style>
+    .yo-widget-empty { text-align: center; padding: 14px 0; color: #e9a33a; }
+    .yo-widget-empty p { margin: 6px 0 0; color: var(--light-text-color, #7f8c8d); }
+    .yo-widget-list { margin: 0; padding: 0; list-style: none; }
+    .yo-widget-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0 8px 10px; border-left: 3px solid var(--yo-message-color, #3fd0c9); border-bottom: 1px solid var(--hairline-color, rgba(51,64,77,.1)); }
+    .yo-widget-item:last-child { border-bottom: 0; }
+    .yo-widget-item__mark { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 2px; color: var(--yo-message-color, #3fd0c9); }
+    .yo-widget-item__mark svg { width: 100%; height: 100%; }
+    .yo-widget-item__body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .yo-widget-item__from { margin-left: auto; font-size: 11px; opacity: .7; }
+</style>
