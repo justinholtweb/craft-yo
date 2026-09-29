@@ -1,7 +1,7 @@
 {
     "name": "justinholtweb/craft-yo",
     "description": "A flash-message bus for Craft CMS plugins. One API, an events surface other plugins can hook, a floating control-panel panel, and unstyled front-end markup you own.",
-    "version": "5.0.0",
+    "version": "5.1.0",
     "type": "craft-plugin",
     "keywords": [
         "craftcms",
