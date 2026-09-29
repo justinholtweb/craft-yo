@@ -113,12 +113,12 @@ class Frontend extends Component
             'class' => $prefix,
             'role' => 'status',
             'aria-live' => 'polite',
-            'data-signals' => Json::encode(['yoCount' => 0, 'yoHasMessages' => false]),
-            'data-on-load' => "@get('{$pollUrl}')",
+            'data-yo-ds-signals' => Json::encode(['yoCount' => 0, 'yoHasMessages' => false]),
+            'data-yo-ds-init' => "@get('{$pollUrl}')",
         ];
 
         if ($poll > 0) {
-            $attributes["data-on-interval__duration.{$poll}s"] = "@get('{$pollUrl}')";
+            $attributes["data-yo-ds-on-interval__duration.{$poll}s"] = "@get('{$pollUrl}')";
         }
 
         return Html::tag('div', $this->render(), $attributes);

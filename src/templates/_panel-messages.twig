@@ -39,12 +39,12 @@
                                 {% if action.url %}
                                     <a class="yo-btn{{ action.primary ? ' yo-btn--primary' }}"
                                        href="{{ action.url }}"
-                                       data-on-click="@post('{{ actUrl }}', {{ csrf }})">{{ action.label }}</a>
+                                       data-yo-ds-on:click="@post('{{ actUrl }}', {{ csrf }})">{{ action.label }}</a>
                                 {% else %}
                                     <button type="button"
                                             class="yo-btn{{ action.primary ? ' yo-btn--primary' }}"
                                             {% if action.action %}data-yo-post="{{ actionUrl(action.action) }}" data-yo-params="{{ action.params|json_encode }}"{% endif %}
-                                            data-on-click="@post('{{ actUrl }}', {{ csrf }})">{{ action.label }}</button>
+                                            data-yo-ds-on:click="@post('{{ actUrl }}', {{ csrf }})">{{ action.label }}</button>
                                 {% endif %}
                             {% endfor %}
                         </div>
@@ -62,7 +62,7 @@
                         class="yo-message__dismiss"
                         title="{{ 'Dismiss'|t('yo') }}"
                         aria-label="{{ 'Dismiss'|t('yo') }}"
-                        data-on-click="@post('{{ dismissUrl }}', {{ csrf }})">
+                        data-yo-ds-on:click="@post('{{ dismissUrl }}', {{ csrf }})">
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
                 </button>
             </li>

@@ -171,7 +171,7 @@
 <div class="yo-try">
     {% for type in types %}
         <button type="button" class="btn"
-                data-on-click="@post('{{ actionUrl('yo/stream/test', { type: type.handle }) }}', {headers: {'X-CSRF-Token': window.YoConfig.csrfTokenValue}})">
+                data-yo-ds-on:click="@post('{{ actionUrl('yo/stream/test', { type: type.handle }) }}', {headers: {'X-CSRF-Token': window.YoConfig.csrfTokenValue}})">
             {{ type.label }}
         </button>
     {% endfor %}

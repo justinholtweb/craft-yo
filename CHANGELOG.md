@@ -1,5 +1,16 @@
 # Release Notes for Yo
 
+## Unreleased
+
+### Fixed
+
+- Yo no longer breaks other markup on the page. DataStar is now scoped to `data-yo-ds-*`
+  attributes; before, it evaluated Craft's own `data-attr` table cells as JavaScript and logged
+  `ReferenceError: … is not defined` on every control panel element index.
+- The panel's DataStar click handlers (open/close, move, clear all, message actions, the settings
+  test buttons) now run — they used pre-1.0 `data-on-click` syntax, which DataStar 1.0 ignores.
+- The front-end channel's first poll on page load now fires (`data-on-load` → `data-init`).
+
 ## 5.0.0 - 2026-08-27
 
 Initial release.

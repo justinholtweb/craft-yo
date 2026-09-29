@@ -28,12 +28,12 @@
                     {% if action.url %}
                         <a class="{{ prefix }}-message__action{{ action.primary ? ' ' ~ prefix ~ '-message__action--primary' }}"
                            href="{{ action.url }}"
-                           data-on-click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</a>
+                           data-yo-ds-on:click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</a>
                     {% else %}
                         <button type="button"
                                 class="{{ prefix }}-message__action{{ action.primary ? ' ' ~ prefix ~ '-message__action--primary' }}"
                                 {% if action.action %}data-yo-post="{{ actionUrl(action.action) }}" data-yo-params="{{ action.params|json_encode }}"{% endif %}
-                                data-on-click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</button>
+                                data-yo-ds-on:click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</button>
                     {% endif %}
                 {% endfor %}
             </p>
@@ -42,6 +42,6 @@
         <button type="button"
                 class="{{ prefix }}-message__dismiss"
                 aria-label="{{ 'Dismiss'|t('yo') }}"
-                data-on-click="@post('{{ actionUrl('yo/stream/dismiss', { uid: message.uid, channel: 'site' }) }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">&times;</button>
+                data-yo-ds-on:click="@post('{{ actionUrl('yo/stream/dismiss', { uid: message.uid, channel: 'site' }) }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">&times;</button>
     </div>
 {% endfor %}

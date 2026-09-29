@@ -69,7 +69,7 @@ check 'so is its message list' grep -q 'id="yo-messages"' "$OUT/dashboard.html"
 check 'the alien is drawn' grep -q 'yo-alien' "$OUT/dashboard.html"
 check 'the browser config was registered' grep -q 'window.YoConfig' "$OUT/dashboard.html"
 check 'DataStar is registered as a module' grep -q 'datastar.js' "$OUT/dashboard.html"
-check 'the poller carries an interval' grep -q 'data-on-interval__duration' "$OUT/dashboard.html"
+check 'the poller carries an interval' grep -q 'data-yo-ds-on-interval__duration' "$OUT/dashboard.html"
 check 'the panel starts at a known anchor' grep -qE 'yo-panel--(top|bottom)-(left|center|right)' "$OUT/dashboard.html"
 
 say 'Sending, over a real session'

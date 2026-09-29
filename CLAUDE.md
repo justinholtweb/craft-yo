@@ -21,7 +21,25 @@ The drawing has no shout arcs, so the teal that carried them is gone from every 
 
 - PHP 8.2+, Craft CMS 5.3+, Yii2, Twig
 - **DataStar 1.0.1**, vendored at `src/web/assets/dist/datastar.js` (copied from `craft-smoke`),
-  registered as an ES module
+  registered as an ES module, and **aliased to `data-yo-ds-*`** — see below.
+
+### DataStar is aliased, and must stay aliased
+
+Yo loads DataStar on every CP page, and an unaliased DataStar treats *every* `data-{plugin}`
+attribute in the document as its own. Craft's element index tables render `<td data-attr="section">`,
+which DataStar's `attr` plugin evaluated as JavaScript — `ReferenceError: section is not defined`
+on every element index, for every site with Yo installed (and any other plugin's `data-attr`,
+`data-show`, `data-text`… markup was fair game too).
+
+The vendored file is patched at its two alias helpers — the same hooks DataStar's official aliased
+builds use: `W=e=>\`data-yo-ds-${e}\`` and `tt=e=>e.startsWith("yo-ds-")?e.slice(6):null`. So Yo's
+templates write `data-yo-ds-on:click`, `data-yo-ds-show`, `data-yo-ds-signals`… and DataStar ignores
+everything else on the page. **Re-apply the patch if DataStar is ever upgraded.**
+
+DataStar 1.0 syntax: the event is the *key* — `data-yo-ds-on:click`, never `on-click` (that is an
+unregistered plugin called `on-click`, silently ignored). `data-on-load` is gone; it is `data-init`.
+Yo shipped 5.0.0 with `data-on-click` and `data-on-load`, so none of its DataStar click handlers
+ever ran; buttons with `data-yo-post` worked only because `yo-cp.js` wires those itself.
 - No build step. The CSS and JS in `dist/` are the sources.
 
 ## Architecture
@@ -49,7 +67,7 @@ through `services\Panel::render()`. A third-party type with its own colour and i
 exactly as right as a built-in one, and it cannot if the browser owns the template.
 
 **Poll, don't hold a stream open.** DataStar's natural shape is a long-lived `text/event-stream`.
-Under PHP-FPM that is one worker per open control panel tab. `data-on-interval__duration.Ns`
+Under PHP-FPM that is one worker per open control panel tab. `data-yo-ds-on-interval__duration.Ns`
 polling plus single-shot SSE responses for every interaction gets the same behaviour without the
 worker cost. Documented in `docs/configuration.md#why-it-polls` because it looks like a mistake
 otherwise.
