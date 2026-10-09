@@ -1,7 +1,6 @@
 # Release Notes for Yo
 
-## Unreleased
-
+## 5.2.0 - 2026-10-09
 ### Added
 
 - An **email channel**: messages go to the inboxes of the people they are addressed to — a group's
