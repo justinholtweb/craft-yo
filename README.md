@@ -24,7 +24,8 @@ Yo::say('Import finished')
 ```
 
 Messages arrive in a floating control panel panel you can drag wherever you like, on your own
-front end in markup you style yourself, or anywhere else a plugin has taught Yo to reach.
+front end in markup you style yourself, in the inboxes of the people they are addressed to, in a
+Slack or Teams channel, or anywhere else a plugin has taught Yo to reach.
 
 **Free. One edition. No paid tier.** It is infrastructure — it is worth more the more plugins use
 it, and a price would be a tax on that.
@@ -59,7 +60,27 @@ They do not know Yo exists. They do not have to.
 | Lifetime | the next page load | until dismissed, or a time to live |
 | Repeats | stacks up | a dedupe key replaces the earlier one |
 | Did they see it? | no answer | shown / read / dismissed / actioned, each an event |
-| Where | the control panel | the control panel, the front end, or a channel you wrote |
+| Where | the control panel | the control panel, the front end, email, Slack/Teams/a webhook, or a channel you wrote |
+
+## Email, Slack and webhooks
+
+Two more channels ship in the box, both off until an admin switches them on in Yo's settings:
+
+- **Email** goes to the people a message is addressed to — a group's members, one user, or for
+  `everyone`, everyone who can reach the control panel. Either one email per message, or a
+  **daily or weekly digest** per person (`php craft yo/digest/send` on cron, with a web-request
+  fallback for sites without one).
+- **Webhook** posts to one shared destination: a Slack or Microsoft Teams incoming webhook, or
+  plain JSON for your own receiver, optionally HMAC-signed. The URL is admin-set only (an
+  environment variable is best — the URL is the credential), and every post goes through the
+  family's SSRF guard: public addresses only, pinned at connect time, redirects never followed.
+
+Each has a per-type routing table — "errors and warnings to email, errors to Slack" — that applies
+to messages addressed beyond the current request. A plugin can also ask for either by name:
+
+```php
+Yo::say('Nightly import failed')->error()->to('group:editors')->channels(['cp', 'email', 'webhook'])->send();
+```
 
 ## Events
 
@@ -88,7 +109,9 @@ Event::on(Messages::class, Messages::EVENT_MESSAGE_ACTIONED, function(DeliveryEv
 | `Messages::EVENT_MESSAGE_ACTIONED` | Somebody pressed one of its buttons |
 | `Messages::EVENT_MESSAGE_EXPIRED` | It ran out of time before anybody looked |
 | `Types::EVENT_REGISTER_MESSAGE_TYPES` | Add a type with its own colour, icon and stickiness |
-| `Channels::EVENT_REGISTER_CHANNELS` | Add a destination — Slack, e-mail, a webhook |
+| `Channels::EVENT_REGISTER_CHANNELS` | Add a destination of your own — SMS, a pager, a websocket |
+| `Email::EVENT_BEFORE_SEND` | Change or cancel an email or one person's digest |
+| `Webhooks::EVENT_BEFORE_POST` | Change or hold back a webhook post |
 
 Three template hooks let a plugin put its own markup inside the panel: `yo.panel.header`,
 `yo.panel.footer`, `yo.message.meta`.
@@ -122,6 +145,8 @@ php craft yo/say "Deploy finished" --type=success --to=group:editors
 php craft yo/channels     # every channel, including ones other plugins added
 php craft yo/types        # every message type, same
 php craft yo/purge        # drop messages past their time to live
+php craft yo/digest/send  # the email digest, for cron — sends once per period
+php craft yo/digest/status
 ```
 
 ## Documentation

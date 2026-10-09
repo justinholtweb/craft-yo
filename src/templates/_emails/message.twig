@@ -1,0 +1,41 @@
+{#
+    One message, HTML half. Rendered by helpers/Mailer in control-panel template mode.
+    Inline styles on purpose: this is an email, and mail clients drop <style> blocks.
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>{{ title }}</title>
+</head>
+<body style="margin:0;padding:24px;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2933;font-size:15px;line-height:1.5;">
+<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:6px;padding:24px;border-top:4px solid {{ color }};">
+    {% if isTest %}
+        <p style="margin:0 0 16px;padding:8px 12px;background:#fff8e1;border-radius:4px;font-size:13px;">
+            {{ "This is a test from Yo’s settings."|t('yo') }}
+        </p>
+    {% endif %}
+
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:{{ color }};">
+        {{ typeLabel }}{% if plugin %} · {{ plugin }}{% endif %}
+    </div>
+    <h1 style="margin:4px 0 8px;font-size:20px;">{{ title }}</h1>
+    {% if body %}
+        <p style="margin:0 0 20px;color:#3e4c59;white-space:pre-line;">{{ body }}</p>
+    {% endif %}
+
+    <p style="margin:0 0 20px;">
+        {% for link in links %}
+            <a href="{{ link.url }}" style="display:inline-block;margin:0 8px 8px 0;padding:8px 14px;background:#33608A;color:#ffffff;border-radius:4px;text-decoration:none;">{{ link.label }}</a>
+        {% else %}
+            <a href="{{ cpUrl }}" style="display:inline-block;padding:8px 14px;background:#33608A;color:#ffffff;border-radius:4px;text-decoration:none;">{{ "Open the control panel"|t('yo') }}</a>
+        {% endfor %}
+    </p>
+
+    <p style="margin:0;color:#7b8794;font-size:12px;">
+        {{ "Sent by Yo on {site} because this message was addressed to you and its type is emailed. An admin can change that in Yo’s settings."|t('yo', { site: siteName }) }}
+    </p>
+</div>
+</body>
+</html>

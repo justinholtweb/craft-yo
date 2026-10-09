@@ -39,6 +39,8 @@ right as a built-in one, and it cannot if the browser owns the template.
 ## Not built
 
 - GraphQL. Per-person, per-session data in a cached response is an awkward fit.
-- Digest e-mail. It belongs in a channel plugin, not here.
+- ~~Digest e-mail. It belongs in a channel plugin, not here.~~ Built in after all (with immediate
+  email and a Slack/Teams/JSON webhook): every site asked for "errors to email, to Slack" and none of
+  them wanted a second plugin to get it.
 - Per-user mute rules in the CP. `EVENT_BEFORE_SEND` is the seam; a UI over it is a second plugin.
 - A "message centre" element index. The dashboard widget covers the 90% case.

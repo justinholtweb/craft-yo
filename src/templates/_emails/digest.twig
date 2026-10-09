@@ -1,0 +1,53 @@
+{#
+    The email digest, HTML half. Rendered by helpers/Mailer in control-panel template mode.
+    Inline styles on purpose: this is an email, and mail clients drop <style> blocks.
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>{{ "Yo digest"|t('yo') }}</title>
+</head>
+<body style="margin:0;padding:24px;background:#f3f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2933;font-size:15px;line-height:1.5;">
+<div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:6px;padding:24px;">
+    {% if isTest %}
+        <p style="margin:0 0 16px;padding:8px 12px;background:#fff8e1;border-radius:4px;font-size:13px;">
+            {{ "This is a test. It shows what your next digest would say; the real one still goes out on schedule, with everything in it."|t('yo') }}
+        </p>
+    {% endif %}
+
+    <h1 style="margin:0 0 4px;font-size:20px;">{{ "{count, plural, =1{One message} other{# messages}} from {site}"|t('yo', { count: count, site: siteName }) }}</h1>
+    <p style="margin:0 0 20px;color:#606d7b;font-size:13px;">
+        {% if since %}
+            {{ "Since the last digest, sent {date}."|t('yo', { date: since|datetime('short') }) }}
+        {% else %}
+            {{ "Everything that waited for your first digest."|t('yo') }}
+        {% endif %}
+    </p>
+
+    {% for item in items %}
+        <div style="margin:0 0 14px;padding:0 0 14px 12px;border-bottom:1px solid #e3e5e8;border-left:3px solid {{ item.color }};">
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:{{ item.color }};">
+                {{ item.typeLabel }}{% if item.plugin %} · {{ item.plugin }}{% endif %}
+            </div>
+            <div style="font-weight:600;margin:2px 0;">
+                {% if item.url %}<a href="{{ item.url }}" style="color:#1f2933;">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
+            </div>
+            {% if item.body %}<div style="color:#3e4c59;font-size:14px;white-space:pre-line;">{{ item.body }}</div>{% endif %}
+        </div>
+    {% endfor %}
+    {% if more %}
+        <p style="margin:0 0 16px;">{{ "… and {count} more."|t('yo', { count: more|number }) }}</p>
+    {% endif %}
+
+    <p style="margin:0 0 20px;">
+        <a href="{{ cpUrl }}" style="display:inline-block;padding:8px 14px;background:#33608A;color:#ffffff;border-radius:4px;text-decoration:none;">{{ "Open the control panel"|t('yo') }}</a>
+    </p>
+
+    <p style="margin:0;color:#7b8794;font-size:12px;">
+        {{ "Sent by Yo on {site}: messages addressed to you are collected into one email. An admin can change that in Yo’s settings."|t('yo', { site: siteName }) }}
+    </p>
+</div>
+</body>
+</html>

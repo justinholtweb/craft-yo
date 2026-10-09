@@ -79,7 +79,7 @@ needed — neither covers the other's case.
 
 ### Data model
 
-Two tables, both hard deletes.
+Four tables, all hard deletes. The last two belong to the email digest.
 
 - `{{%yo_messages}}` — only messages that outlive the request. `sticky` is deliberately
   **nullable**: null means "whatever the type says", including after somebody edits the type.
@@ -87,6 +87,10 @@ Two tables, both hard deletes.
 - `{{%yo_deliveries}}` — one row per (message, user, channel), unique on that triple. State only
   moves forward (`queued` → `shown` → `read` → `dismissed`); a poll that re-shows something already
   read must not walk it back.
+- `{{%yo_email_queue}}` — one row per (message, person) waiting for that person's next digest; a
+  snapshot (title, body, type, first link), not a reference, because session-lane messages have no
+  row to point at. Deleted when the mailer accepts their digest, FK-cascaded with the user.
+- `{{%yo_digests}}` — Yarn's one-row "last sent" marker (`period`, `lastSentAt`, `lastResult`).
 
 ### Services
 
@@ -98,9 +102,34 @@ Two tables, both hard deletes.
 | `Panel` | The control panel panel: config, position preference, payload, render |
 | `Frontend` | The front-end channel: payload, render (with site override), container |
 | `Adopt` | Craft's own flashes |
+| `Email` | Email channel: recipients, immediate send (via `SendEmail` job), digest queue, test |
+| `Digest` | The email digest schedule — Yarn's Theme 7 pattern (claim/release marker, cron + web fallback) |
+| `Webhooks` | Webhook channel: Slack/Teams/JSON payloads, SSRF guard, signed post (via `PostWebhook` job) |
 
 `getMessageByUid()` is the authorisation boundary — every receipt goes through it, and it only
 returns a message the asking user could already see. Nothing else checks.
+
+### Email and webhook channels
+
+Ported from two family references, and to be kept in step with them:
+
+- **Digest** = craft-yarn 884cef3's scheduled-digest pattern (`services/Digest.php`,
+  `helpers/Mailer.php`, `jobs/SendDigest.php`, `console/controllers/DigestController.php`). The
+  generic half — period keys (ISO `o-\WW`), conditional-UPDATE claim/release, "at or after"
+  due-ness, 5-minute web fallback via `EVENT_AFTER_REQUEST`, never `Gc::EVENT_RUN` — is unchanged.
+  What differs: items are rows in `yo_email_queue` (so no "seen" list), recipients are per person
+  (each person's own rows), and there is no recipients setting — the message's audience decides.
+  Rows are snapshotted by `max(id)` before sending so a message filed mid-run waits for the next.
+- **Webhook** = craft-erpy 0f8ea45's sender (`helpers/Ip.php` copied verbatim bar the namespace,
+  `Webhooks::target()`/`post()`): scheme check, no userinfo, `Ip::resolvePublic`, `CURLOPT_RESOLVE`
+  pin, `allow_redirects => false`, curl-only Guzzle client, `X-Yo-Signature` HMAC of
+  `timestamp.body`. `allowPrivateWebhookHosts` is config-file only. The URL is read from settings
+  when the job runs and never stored in the job.
+
+Routing rule for both, in `EmailChannel::wants()`/`WebhookChannel::wants()`: off → never; named
+channels → only if named; otherwise routed type **and** `getIsStored()` (audience beyond the current
+request). That last clause keeps adopted Craft notices ("Entry saved") out of inboxes and Slack.
+`everyone` emails `User::find()->can('accessCp')`, active, with an address.
 
 ## Traps found while building this
 
@@ -141,6 +170,8 @@ No local PHP on this Mac. Everything runs inside the plugin-testing container.
 ```sh
 cd ~/Sites/plugin-testing
 ddev exec php /var/www/craft-yo/tests/integration/checks.php    # 95 checks
+ddev exec php /var/www/craft-yo/tests/integration/channels.php  # 63: email, digest, webhook, SSRF
+ddev exec php /var/www/craft-yo/tests/integration/channels-http.php  # 11: test action over HTTP
 ddev exec bash -c 'find /var/www/craft-yo/src -name "*.php" -print0 | xargs -0 -n1 php -l'
 
 cd ~/Sites/craft-yo

@@ -10,16 +10,20 @@ use craft\helpers\Json;
 use craft\helpers\UrlHelper;
 use craft\services\Dashboard;
 use craft\services\Gc;
+use craft\web\Application as WebApplication;
 use craft\web\Response;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\View;
 use justinholtweb\yo\models\Settings;
 use justinholtweb\yo\services\Adopt;
 use justinholtweb\yo\services\Channels;
+use justinholtweb\yo\services\Digest;
+use justinholtweb\yo\services\Email;
 use justinholtweb\yo\services\Frontend;
 use justinholtweb\yo\services\Messages;
 use justinholtweb\yo\services\Panel;
 use justinholtweb\yo\services\Types;
+use justinholtweb\yo\services\Webhooks;
 use justinholtweb\yo\twig\YoVariable;
 use justinholtweb\yo\web\assets\cp\YoCpAsset;
 use justinholtweb\yo\widgets\YoWidget;
@@ -40,6 +44,9 @@ use yii\base\Event;
  * @property-read Panel $panel
  * @property-read Frontend $frontend
  * @property-read Adopt $adopt
+ * @property-read Email $email
+ * @property-read Digest $digest
+ * @property-read Webhooks $webhooks
  * @property-read Settings $settings
  *
  * @method Settings getSettings()
@@ -62,7 +69,7 @@ class Plugin extends BasePlugin
     public const HOOK_PANEL_FOOTER = 'yo.panel.footer';
     public const HOOK_MESSAGE_META = 'yo.message.meta';
 
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = true;
 
     public static function config(): array
@@ -75,6 +82,9 @@ class Plugin extends BasePlugin
                 'panel' => Panel::class,
                 'frontend' => Frontend::class,
                 'adopt' => Adopt::class,
+                'email' => Email::class,
+                'digest' => Digest::class,
+                'webhooks' => Webhooks::class,
             ],
         ];
     }
@@ -86,6 +96,7 @@ class Plugin extends BasePlugin
         $this->registerTwig();
         $this->registerWidget();
         $this->registerGarbageCollection();
+        $this->registerDigestFallback();
 
         $request = Craft::$app->getRequest();
 
@@ -114,7 +125,28 @@ class Plugin extends BasePlugin
             'positions' => Settings::positionOptions(),
             'types' => $this->types->getAllTypes(),
             'channels' => $this->channels->getAllChannels(),
+            'typeOptions' => array_map(
+                fn($type) => ['value' => $type->handle, 'label' => $type->label],
+                array_values($this->types->getAllTypes()),
+            ),
+            'digestState' => $this->safeDigestState(),
+            'digestNext' => $this->digest->isEnabled() && $this->safeDigestState() !== null ? $this->digest->nextDueAt() : null,
         ]);
+    }
+
+    /**
+     * The digest marker for the settings screen, or null before the migration that adds its table
+     * has run — the settings screen must still open then.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function safeDigestState(): ?array
+    {
+        try {
+            return Craft::$app->getPlugins()->isPluginUpdatePending($this) ? null : $this->digest->state();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     // ------------------------------------------------------------------ control panel
@@ -268,8 +300,39 @@ class Plugin extends BasePlugin
         Event::on(Gc::class, Gc::EVENT_RUN, function() {
             try {
                 $this->messages->purgeExpired();
+                $this->email->purgeStale();
             } catch (Throwable $e) {
                 Craft::error('Could not purge expired Yos: ' . $e->getMessage(), self::LOG_CATEGORY);
+            }
+        });
+    }
+
+    /**
+     * The email digest's fallback trigger, for sites with no cron job running `yo/digest/send`.
+     *
+     * At the end of a web request rather than on `Gc::EVENT_RUN`: garbage collection runs on a
+     * dice roll, which makes for a schedule nobody can predict. What runs here is a cache read;
+     * the schedule is consulted at most every five minutes and the work happens in a queue job.
+     */
+    private function registerDigestFallback(): void
+    {
+        $settings = $this->getSettings();
+
+        if (!$settings->emailChannel || $settings->emailMode !== Settings::EMAIL_DIGEST || !$settings->digestWebTrigger) {
+            return;
+        }
+
+        Event::on(WebApplication::class, WebApplication::EVENT_AFTER_REQUEST, function() {
+            try {
+                // Before the migration that adds the marker table has run, there is nowhere to
+                // read the schedule from.
+                if (!Craft::$app->getIsInstalled() || Craft::$app->getPlugins()->isPluginUpdatePending($this)) {
+                    return;
+                }
+
+                $this->digest->queueIfDue();
+            } catch (Throwable $e) {
+                Craft::warning('Could not check the Yo digest schedule: ' . $e->getMessage(), self::LOG_CATEGORY);
             }
         });
     }

@@ -304,11 +304,11 @@ check('a message with an unknown type falls back to notice rather than throwing'
 
 section('Channels');
 
-check('the three shipped channels are registered', function() use ($plugin) {
+check('the five shipped channels are registered', function() use ($plugin) {
     $handles = array_keys($plugin->channels->getAllChannels());
     sort($handles);
 
-    return $handles === ['cp', 'log', 'site'] ?: implode(', ', $handles);
+    return $handles === ['cp', 'email', 'log', 'site', 'webhook'] ?: implode(', ', $handles);
 });
 
 check('the control panel channel is queued by Yo; the log channel is a transport', function() use ($plugin) {
@@ -423,7 +423,7 @@ check('a registration that is not a channel is skipped rather than fatal', funct
     Event::off(Channels::class, Channels::EVENT_REGISTER_CHANNELS, $handler);
     $plugin->channels->reset();
 
-    return count($handles) === 3 ?: implode(', ', $handles);
+    return count($handles) === 5 ?: implode(', ', $handles);
 });
 
 // ---------------------------------------------------------------------------- the message model

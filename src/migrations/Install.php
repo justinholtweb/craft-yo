@@ -5,6 +5,8 @@ namespace justinholtweb\yo\migrations;
 use craft\db\Migration;
 use craft\db\Table as CraftTable;
 use justinholtweb\yo\db\Table;
+use justinholtweb\yo\services\Digest;
+use justinholtweb\yo\services\Email;
 
 /**
  * Yo install migration.
@@ -17,11 +19,19 @@ class Install extends Migration
         $this->createIndexes();
         $this->addForeignKeys();
 
+        // The email channel's digest queue and its "last sent" marker. Each owns its schema so
+        // this and the migration that adds them to an existing install cannot drift apart.
+        Email::createQueueTable($this);
+        Digest::createTable($this);
+
         return true;
     }
 
     public function safeDown(): bool
     {
+        $this->dropTableIfExists(Table::EMAIL_QUEUE);
+        $this->dropTableIfExists(Table::DIGESTS);
+
         // Deliveries point at messages, so they go first.
         $this->dropTableIfExists(Table::DELIVERIES);
         $this->dropTableIfExists(Table::MESSAGES);

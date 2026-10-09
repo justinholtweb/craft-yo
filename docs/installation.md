@@ -10,7 +10,9 @@ summary: Requirements, install, and the one setting that makes it useful before 
 - Craft CMS 5.3 or later
 - PHP 8.2 or later
 
-Nothing else. No queue, no cache driver, no external service, no build step.
+Nothing else. No external service, no build step. The optional email and webhook channels use
+Craft's own mailer and queue; the email digest wants a cron job (`php craft yo/digest/send`), and
+falls back to web requests without one.
 
 ## Install
 
@@ -21,7 +23,8 @@ php craft plugin/install yo
 
 Or find **Yo** in the Craft Plugin Store and install it from there.
 
-Installing creates two tables and nothing else. It does not change any existing plugin's
+Installing creates four tables (two for messages, two for the optional email digest) and nothing
+else. It does not change any existing plugin's
 behaviour, and it does not send anything.
 
 ## It is useful before you write anything

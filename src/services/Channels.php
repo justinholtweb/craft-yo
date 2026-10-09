@@ -6,8 +6,10 @@ use Craft;
 use craft\base\Component;
 use justinholtweb\yo\channels\ChannelInterface;
 use justinholtweb\yo\channels\CpChannel;
+use justinholtweb\yo\channels\EmailChannel;
 use justinholtweb\yo\channels\LogChannel;
 use justinholtweb\yo\channels\SiteChannel;
+use justinholtweb\yo\channels\WebhookChannel;
 use justinholtweb\yo\events\RegisterChannelsEvent;
 use justinholtweb\yo\models\Message;
 use justinholtweb\yo\Plugin;
@@ -48,6 +50,8 @@ class Channels extends Component
                 CpChannel::class,
                 SiteChannel::class,
                 LogChannel::class,
+                EmailChannel::class,
+                WebhookChannel::class,
             ],
         ]);
 

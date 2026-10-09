@@ -60,10 +60,37 @@ use justinholtweb\yo\events\DefineDeliveryEvent;
 
 Event::on(Messages::class, Messages::EVENT_DEFINE_DELIVERY, function(DefineDeliveryEvent $event) {
     if ($event->message->type === 'error') {
-        $event->channels[] = 'slack';
+        $event->channels[] = 'webhook';
     }
 });
 ```
+
+The email and webhook channels also route by type from their settings; this event is for the rules
+a checkbox table cannot express.
+
+## Email and webhook events
+
+### `Email::EVENT_BEFORE_SEND`
+
+Fired before the email channel sends anything — one message, one person's digest, or a test.
+`EmailEvent` carries `recipients`, `subject`, `variables` (what the `_emails/*.twig` templates
+see), `isDigest`, `isTest` and, for a digest, `userId`. Set `isValid` to false to stop it; a
+cancelled digest drops that person's waiting items.
+
+```php
+use justinholtweb\yo\services\Email;
+use justinholtweb\yo\events\EmailEvent;
+
+Event::on(Email::class, Email::EVENT_BEFORE_SEND, function(EmailEvent $event) {
+    $event->subject = '[Ops] ' . $event->subject;
+});
+```
+
+### `Webhooks::EVENT_BEFORE_POST`
+
+Fired when the webhook channel takes a message, before the post is queued. `WebhookEvent` carries
+the `message` and the `payload` in the configured format. Add to the payload, or set `isValid` to
+false to hold it back.
 
 ## Receipt events
 
@@ -121,22 +148,24 @@ than assigns still works.
 
 ## Registering a channel
 
-A channel is somewhere a message can end up. Yo ships three; the fourth is yours.
+A channel is somewhere a message can end up. Yo ships five — the panel, the front end, the log,
+email and a webhook (Slack, Teams or JSON). This is how the sixth gets written; the bundled
+`EmailChannel` and `WebhookChannel` are complete examples of a transport.
 
 ```php
 use justinholtweb\yo\channels\BaseChannel;
 use justinholtweb\yo\models\Message;
 
-class SlackChannel extends BaseChannel
+class SmsChannel extends BaseChannel
 {
     public function handle(): string
     {
-        return 'slack';
+        return 'sms';
     }
 
     public function label(): string
     {
-        return 'Slack';
+        return 'SMS';
     }
 
     /** Wait to be asked for by name — do not take everything by default. */
@@ -147,7 +176,7 @@ class SlackChannel extends BaseChannel
 
     public function deliver(Message $message, array $userIds): void
     {
-        MyPlugin::getInstance()->slack->post($message->title, $message->body);
+        MyPlugin::getInstance()->sms->send($userIds, $message->title);
     }
 }
 ```
@@ -157,11 +186,11 @@ use justinholtweb\yo\services\Channels;
 use justinholtweb\yo\events\RegisterChannelsEvent;
 
 Event::on(Channels::class, Channels::EVENT_REGISTER_CHANNELS, function(RegisterChannelsEvent $e) {
-    $e->channels[] = SlackChannel::class;
+    $e->channels[] = SmsChannel::class;
 });
 ```
 
-Every plugin already sending Yos now reaches Slack, and none of them changed.
+Every plugin already sending Yos can now reach a phone, and none of them changed.
 
 `isQueued()` is the other method worth knowing. It is `false` by default and means "I hand the
 message on and have nothing left to track". The control panel and front-end channels return `true`

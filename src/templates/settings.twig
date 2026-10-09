@@ -132,6 +132,188 @@
 
 <hr>
 
+<h2>{{ 'Email'|t('yo') }}</h2>
+
+<p class="light">{{ 'Messages addressed beyond the current request — to everyone, a group or a person — can also be emailed to the people they are addressed to. Pick which types; a plugin can also ask for email by name with `->channels([\'cp\', \'email\'])`. “Everyone” means everyone who can reach the control panel.'|t('yo') }}</p>
+
+{{ forms.lightswitchField({
+    label: 'Email channel'|t('yo'),
+    id: 'emailChannel',
+    name: 'emailChannel',
+    on: settings.emailChannel,
+    toggle: 'yo-email-settings',
+}) }}
+
+<div id="yo-email-settings"{% if not settings.emailChannel %} class="hidden"{% endif %}>
+    {{ forms.checkboxSelectField({
+        label: 'Email these types'|t('yo'),
+        instructions: 'Only messages that named no channels of their own are routed by type.'|t('yo'),
+        id: 'emailTypes',
+        name: 'emailTypes',
+        options: typeOptions,
+        values: settings.emailTypes,
+        showAllOption: true,
+        errors: settings.getErrors('emailTypes'),
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Send'|t('yo'),
+        id: 'emailMode',
+        name: 'emailMode',
+        options: [
+            { value: 'immediate', label: 'Each message as it is sent'|t('yo') },
+            { value: 'digest', label: 'A digest — one email per person per day or week'|t('yo') },
+        ],
+        value: settings.emailMode,
+        toggle: true,
+        targetPrefix: 'yo-email-mode-',
+    }) }}
+
+    <div id="yo-email-mode-digest"{% if settings.emailMode != 'digest' %} class="hidden"{% endif %}>
+        {{ forms.selectField({
+            label: 'How often'|t('yo'),
+            id: 'digestFrequency',
+            name: 'digestFrequency',
+            options: [
+                { value: 'daily', label: 'Daily'|t('yo') },
+                { value: 'weekly', label: 'Weekly'|t('yo') },
+            ],
+            value: settings.digestFrequency,
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Day of the week'|t('yo'),
+            instructions: 'For a weekly digest.'|t('yo'),
+            id: 'digestWeekday',
+            name: 'digestWeekday',
+            options: [
+                { value: 1, label: 'Monday'|t('app') },
+                { value: 2, label: 'Tuesday'|t('app') },
+                { value: 3, label: 'Wednesday'|t('app') },
+                { value: 4, label: 'Thursday'|t('app') },
+                { value: 5, label: 'Friday'|t('app') },
+                { value: 6, label: 'Saturday'|t('app') },
+                { value: 7, label: 'Sunday'|t('app') },
+            ],
+            value: settings.digestWeekday,
+        }) }}
+
+        {{ forms.textField({
+            label: 'Hour'|t('yo'),
+            instructions: '0–23, in the system time zone ({tz}). The digest goes at the first run on or after this hour.'|t('yo', { tz: craft.app.timeZone }),
+            id: 'digestHour',
+            name: 'digestHour',
+            value: settings.digestHour,
+            size: 3,
+            type: 'number',
+            errors: settings.getErrors('digestHour'),
+        }) }}
+
+        {{ forms.lightswitchField({
+            label: 'Check from web requests too'|t('yo'),
+            instructions: 'For sites with no cron job. Better: run `php craft yo/digest/send` every 15 minutes.'|t('yo'),
+            id: 'digestWebTrigger',
+            name: 'digestWebTrigger',
+            on: settings.digestWebTrigger,
+        }) }}
+
+        {% if digestState %}
+            <p class="light">
+                {% if digestState.lastSentAt %}
+                    {{ 'Last sent {date}.'|t('yo', { date: digestState.lastSentAt|datetime('short') }) }}
+                {% else %}
+                    {{ 'Not sent yet.'|t('yo') }}
+                {% endif %}
+                {% if digestNext %}
+                    {{ 'Next due {date}.'|t('yo', { date: digestNext|datetime('short') }) }}
+                {% endif %}
+            </p>
+        {% endif %}
+    </div>
+
+    <p>
+        <button type="button" class="btn" data-yo-test-channel="email">{{ 'Send a test email'|t('yo') }}</button>
+        <span class="light">{{ 'To you, using the saved settings. A digest test never counts as the real one.'|t('yo') }}</span>
+    </p>
+</div>
+
+<hr>
+
+<h2>{{ 'Slack, Teams or a webhook'|t('yo') }}</h2>
+
+<p class="light">{{ 'One shared destination for the messages that matter to the whole team. Each routed message is posted once, whoever it was addressed to — so everybody who reads that channel sees it.'|t('yo') }}</p>
+
+{{ forms.lightswitchField({
+    label: 'Webhook channel'|t('yo'),
+    id: 'webhookChannel',
+    name: 'webhookChannel',
+    on: settings.webhookChannel,
+    toggle: 'yo-webhook-settings',
+}) }}
+
+<div id="yo-webhook-settings"{% if not settings.webhookChannel %} class="hidden"{% endif %}>
+    {{ forms.autosuggestField({
+        label: 'Webhook URL'|t('yo'),
+        instructions: 'A Slack or Teams incoming-webhook URL, or your own endpoint — best kept in an environment variable, because the URL is the credential. Only public hosts are allowed and redirects are never followed.'|t('yo'),
+        id: 'webhookUrl',
+        name: 'webhookUrl',
+        suggestEnvVars: true,
+        value: settings.webhookUrl,
+        errors: settings.getErrors('webhookUrl'),
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Format'|t('yo'),
+        id: 'webhookFormat',
+        name: 'webhookFormat',
+        options: [
+            { value: 'slack', label: 'Slack'|t('yo') },
+            { value: 'teams', label: 'Microsoft Teams'|t('yo') },
+            { value: 'json', label: 'Plain JSON (your own receiver)'|t('yo') },
+        ],
+        value: settings.webhookFormat,
+    }) }}
+
+    {{ forms.autosuggestField({
+        label: 'Signing secret'|t('yo'),
+        instructions: 'Optional. When set, each post carries `X-Yo-Timestamp` and `X-Yo-Signature: sha256=…`, an HMAC of `timestamp.body`, so your own receiver can verify it. Slack and Teams ignore it.'|t('yo'),
+        id: 'webhookSecret',
+        name: 'webhookSecret',
+        suggestEnvVars: true,
+        value: settings.webhookSecret,
+    }) }}
+
+    {{ forms.checkboxSelectField({
+        label: 'Post these types'|t('yo'),
+        instructions: 'Only messages that named no channels of their own are routed by type; a plugin can ask for this one with `->channels([\'cp\', \'webhook\'])`.'|t('yo'),
+        id: 'webhookTypes',
+        name: 'webhookTypes',
+        options: typeOptions,
+        values: settings.webhookTypes,
+        showAllOption: true,
+        errors: settings.getErrors('webhookTypes'),
+    }) }}
+
+    <p>
+        <button type="button" class="btn" data-yo-test-channel="webhook">{{ 'Send a test post'|t('yo') }}</button>
+        <span class="light">{{ 'To the saved URL. Save first.'|t('yo') }}</span>
+    </p>
+</div>
+
+{% js %}
+    document.querySelectorAll('[data-yo-test-channel]').forEach((button) => {
+        button.addEventListener('click', () => {
+            button.classList.add('loading');
+            Craft.sendActionRequest('POST', 'yo/channels/test', { data: { channel: button.dataset.yoTestChannel } })
+                .then((response) => Craft.cp.displaySuccess(response.data.message))
+                .catch(({ response }) => Craft.cp.displayError(response?.data?.message ?? Craft.t('yo', 'The test could not be sent.')))
+                .finally(() => button.classList.remove('loading'));
+        });
+    });
+{% endjs %}
+
+<hr>
+
 <h2>{{ 'Housekeeping'|t('yo') }}</h2>
 
 {{ forms.textField({

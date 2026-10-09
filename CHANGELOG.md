@@ -1,5 +1,27 @@
 # Release Notes for Yo
 
+## Unreleased
+
+### Added
+
+- An **email channel**: messages go to the inboxes of the people they are addressed to — a group's
+  members, one user, or for `everyone`, everyone who can reach the control panel. One email per
+  message (queued), or a **daily or weekly digest** per person, run by `php craft yo/digest/send`
+  on cron with a web-request fallback. `yo/digest/status` shows the schedule and what is waiting.
+- A **webhook channel**: Slack, Microsoft Teams or plain JSON, to one admin-set URL (`$ENV`
+  supported), optionally HMAC-signed with `X-Yo-Timestamp`/`X-Yo-Signature`. Posts are queued and
+  retried, and go through the family's SSRF guard — public addresses only, pinned at connect time,
+  no redirects.
+- A per-type routing table for both ("errors and warnings to email, errors to Slack"). It applies to
+  messages addressed beyond the current request; a plugin can also ask for either channel by name.
+- "Send a test email" and "Send a test post" buttons in the settings, admin-only and using the saved
+  settings.
+- `Email::EVENT_BEFORE_SEND` and `Webhooks::EVENT_BEFORE_POST`, to change or cancel what goes out.
+
+### Changed
+
+- Two new tables, `yo_email_queue` and `yo_digests`, for the email digest. Run `php craft up`.
+
 ## 5.1.0 - 2026-09-29
 
 ### Fixed

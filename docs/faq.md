@@ -67,9 +67,24 @@ DataStar is vendored — 34 KB, no CDN, no build step, no framework in your cont
 
 ## Can I put Yo's messages somewhere else — Slack, e-mail, a webhook?
 
-Yes, and you do not have to touch any of the plugins already sending them. Write a channel, register
-it from `Channels::EVENT_REGISTER_CHANNELS`, and route to it from `EVENT_DEFINE_DELIVERY`. See
-[The API](api) for a complete Slack channel in about twenty lines.
+Yes, without touching any of the plugins already sending them. Email (immediate or a daily/weekly
+digest) and a webhook (Slack, Microsoft Teams or signed JSON) ship with Yo — switch them on in the
+settings and tick which message types go where. See [Configuration](configuration#email).
+
+For anywhere else, write a channel, register it from `Channels::EVENT_REGISTER_CHANNELS`, and route
+to it from `EVENT_DEFINE_DELIVERY`. See [The API](api).
+
+## Why did "Entry saved" not reach my inbox when I routed notices to email?
+
+Because the routing table only takes messages addressed beyond the current request — to everyone, a
+group or a person. A message for whoever is making the request is already on their screen; emailing
+it would turn every save into an email. A plugin that really wants one can name the channel:
+`->channels(['cp', 'email'])`.
+
+## Who gets an email for a message sent to everyone?
+
+Everyone who can reach the control panel, with an active account and an address — the same people
+the panel shows it to. Not front-end member accounts.
 
 ## Can I stop one noisy plugin without uninstalling it?
 

@@ -7,8 +7,8 @@ use justinholtweb\yo\models\Message;
 /**
  * Somewhere a message can end up.
  *
- * Yo ships three: the control panel panel, the front end, and the log. A plugin registers a
- * fourth — Slack, e-mail, a webhook, a websocket — from
+ * Yo ships five: the control panel panel, the front end, the log, email and a webhook (Slack,
+ * Teams or JSON). A plugin registers another — SMS, a websocket, a pager — from
  * {@see \justinholtweb\yo\services\Channels::EVENT_REGISTER_CHANNELS} and every plugin already
  * sending Yos reaches it without a line of change.
  */

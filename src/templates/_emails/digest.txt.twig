@@ -1,0 +1,22 @@
+{%- autoescape false -%}
+{% if isTest %}{{ "This is a test. It shows what your next digest would say; the real one still goes out on schedule, with everything in it."|t('yo') }}
+
+{% endif %}
+{{ "{count, plural, =1{One message} other{# messages}} from {site}"|t('yo', { count: count, site: siteName }) }}
+{% if since %}{{ "Since the last digest, sent {date}."|t('yo', { date: since|datetime('short') }) }}{% else %}{{ "Everything that waited for your first digest."|t('yo') }}{% endif %}
+
+
+{% for item in items -%}
+[{{ item.typeLabel|upper }}{% if item.plugin %} · {{ item.plugin }}{% endif %}] {{ item.title }}
+{% if item.body %}  {{ item.body }}
+{% endif %}{% if item.url %}  {{ item.url }}
+{% endif %}
+
+{% endfor -%}
+{% if more %}{{ "… and {count} more."|t('yo', { count: more|number }) }}
+
+{% endif -%}
+{{ "Open the control panel"|t('yo') }}: {{ cpUrl }}
+
+{{ "Sent by Yo on {site}: messages addressed to you are collected into one email. An admin can change that in Yo’s settings."|t('yo', { site: siteName }) }}
+{% endautoescape -%}
