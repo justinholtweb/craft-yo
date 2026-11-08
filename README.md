@@ -131,8 +131,8 @@ That registers the behaviour and puts a container where you put the tag. Style
 `yo/_messages.twig` into your own templates directory and take the markup over outright.
 
 Serve all your JavaScript from your own bundle? Turn off **Load the front-end script for me**,
-import `yo-site.mjs` (or `yo-site.js`), add `{{ craft.yo.runtimeConfig() }}` to the page and call
-`YoSite.start()`. Bring Yo's `datastar.js` along, or point Yo at the DataStar 1.0 you already run —
+import `yo-site.mjs` (or `yo-site.js`), add `{{ craft.yo.runtimeConfig() }}` to `<html>` or `<body>`
+(the script reads it from nowhere else, so user content cannot forge it) and call `YoSite.start()`. Bring Yo's `datastar.js` along, or point Yo at the DataStar 1.0 you already run —
 never both. See [Bundling the script yourself](docs/usage.md#bundling-the-script-yourself).
 
 ## Ajax without the Ajax

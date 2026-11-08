@@ -42,7 +42,8 @@ class YoVariable
      * ```
      *
      * The bundled script's `YoSite.start()` reads it, so the class prefix and the auto-dismiss
-     * delay still come from Yo's settings. It is the same array the injected `window.YoSiteConfig`
+     * delay still come from Yo's settings. Only from `<html>` or `<body>`: an attribute anywhere
+     * else could have arrived in user content that a sanitiser let `data-*` through on. It is the same array the injected `window.YoSiteConfig`
      * is built from, minus the visitor's CSRF token — site-specific, never visitor-specific, so the
      * page stays cacheable. Renders nothing while the front-end channel is off, and never throws.
      */

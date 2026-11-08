@@ -220,7 +220,7 @@ Craft::$app->getView()->hook('yo.panel.footer', function(array &$context) {
 | | |
 | --- | --- |
 | `craft.yo.init()` | Registers the assets and outputs the front-end container (only the container when the script is bundled) |
-| `craft.yo.runtimeConfig()` | The `data-yo-site-config` attribute a bundled `yo-site.js` reads; empty while the front-end channel is off |
+| `craft.yo.runtimeConfig()` | The `data-yo-site-config` attribute a bundled `yo-site.js` reads. Put it on `<html>` or `<body>`, the only elements it is read from, so user content cannot forge it. Empty while the front-end channel is off |
 | `craft.yo.messages(drain = true)` | The waiting messages, as arrays |
 | `craft.yo.count()` | How many are waiting, without taking them |
 | `craft.yo.types()` | Every registered message type |

@@ -24,7 +24,7 @@
         }
 
         // The injected copy arriving second still has to start it, as it always has.
-        if (window.YoSiteConfig) {
+        if (isPlainObject(window.YoSiteConfig)) {
             window.YoSite.start();
         }
 
@@ -38,8 +38,20 @@
 
     // ── configuration ────────────────────────────────────────────────────────────────────────
 
+    /**
+     * A plain object, not a DOM node: `<form id="YoSiteConfig">`, or two `<a id="YoSiteConfig">`,
+     * in user content makes `window.YoSiteConfig` an element or a collection (DOM clobbering).
+     */
+    function isPlainObject(value) {
+        return Object.prototype.toString.call(value) === '[object Object]';
+    }
+
     function configure(options) {
-        for (var key in options || {}) {
+        if (!isPlainObject(options)) {
+            return;
+        }
+
+        for (var key in options) {
             if (Object.prototype.hasOwnProperty.call(options, key)) {
                 config[key] = options[key];
             }
@@ -50,21 +62,64 @@
      * What `{{ craft.yo.runtimeConfig() }}` writes into the page, for a site that bundles this file
      * itself. Site-specific, never visitor-specific, so the page stays cacheable. Malformed JSON is
      * ignored rather than thrown: a broken attribute must not take the rest of the bundle down.
+     *
+     * Read off `<body>` or `<html>` and nowhere else. Sanitisers that keep `data-*` attributes put
+     * user content in the page, and a `data-yo-site-config` of its own placed earlier in the DOM
+     * would otherwise be the first one found — and the page's config.
      */
     function pageConfig() {
-        var node = document.querySelector('[data-yo-site-config]');
+        var nodes = [document.body, document.documentElement];
 
-        if (!node) {
-            return {};
+        for (var i = 0; i < nodes.length; i++) {
+            var value = nodes[i] && nodes[i].getAttribute ? nodes[i].getAttribute('data-yo-site-config') : null;
+
+            if (value === null || value === undefined) {
+                continue;
+            }
+
+            try {
+                var parsed = JSON.parse(value);
+
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (e) {
+                return {};
+            }
         }
 
-        try {
-            var parsed = JSON.parse(node.getAttribute('data-yo-site-config'));
+        return {};
+    }
 
-            return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch (e) {
-            return {};
+    /**
+     * Whether a URL points at this page's own origin. Anything the script sends a CSRF token to,
+     * or takes one from, has to. Fails closed: not a string, unparseable, or no way to tell → no.
+     */
+    function sameOrigin(url) {
+        if (typeof url !== 'string') {
+            return false;
         }
+
+        // What a URL parser discards anyway: leading C0 controls and spaces, and any tab or newline.
+        url = url.replace(/^[\u0000-\u0020]+/, '').replace(/[\t\n\r]/g, '');
+
+        if (url === '') {
+            return false;
+        }
+
+        var here = window.location;
+
+        if (typeof URL === 'function' && here && here.href) {
+            try {
+                var there = new URL(url, here.href);
+
+                return there.protocol === here.protocol && there.host === here.host;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // No parser: a path on this host and nothing else — not `//host`, not `/\host`, which
+        // browsers read as `//host`.
+        return url.charAt(0) === '/' && url.charAt(1) !== '/' && url.charAt(1) !== '\\';
     }
 
     /**
@@ -99,6 +154,11 @@
     // ── behaviour ────────────────────────────────────────────────────────────────────────────
 
     function post(url, body) {
+        // The token rides in a header, so it goes wherever the URL does. Not off this origin.
+        if (!sameOrigin(url)) {
+            return null;
+        }
+
         function send() {
             return fetch(url, {
                 method: 'POST',
@@ -185,6 +245,13 @@
 
             configure(window.YoSiteConfig);
             configure(pageConfig());
+
+            // The token is fetched from here, so the page — or anything that can write into it —
+            // must not be able to point it elsewhere. What the site passes to start() is trusted.
+            if (config.sessionInfoUrl !== undefined && !sameOrigin(config.sessionInfoUrl)) {
+                delete config.sessionInfoUrl;
+            }
+
             configure(options);
 
             // The message templates' DataStar handlers send `window.YoSiteConfig.csrfTokenValue`,
@@ -211,7 +278,7 @@
 
     // Yo loaded this file and wrote `window.YoSiteConfig` first: start, exactly as before. A
     // bundled copy has no inline config and waits for `YoSite.start()`.
-    if (window.YoSiteConfig) {
+    if (isPlainObject(window.YoSiteConfig)) {
         YoSite.start();
     }
 })(window, document);

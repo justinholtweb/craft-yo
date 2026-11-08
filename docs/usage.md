@@ -190,11 +190,17 @@ instead of letting `craft.yo.init()` add its own `<script>` tags.
 2. Copy `yo-site.js` and `yo-site.mjs` from `vendor/justinholtweb/craft-yo/src/web/assets/dist/`
    into your source, side by side.
 3. Decide where DataStar comes from — see below.
-4. Write the configuration into the page, anywhere:
+4. Write the configuration onto `<html>` or `<body>` — nowhere else:
 
    ```twig
    <body {{ craft.yo.runtimeConfig() }}>
    ```
+
+   The script reads `data-yo-site-config` from those two elements only and ignores it anywhere
+   else. Pages render user content, and HTML sanitisers often keep `data-*` attributes, so an
+   attribute on any other element could have come from a comment or a profile field rather than
+   from you. If you load the script with a plain `<script>` in `<head>`, use `<html>`: `<body>`
+   does not exist yet when it starts.
 
 5. Start it:
 
@@ -212,7 +218,11 @@ auto-dismiss delay still follow Yo's settings. Anything you pass — `YoSite.sta
 
 The attribute carries nothing about the visitor, so the page stays cacheable — which is why the CSRF
 token is not in it. The script fetches the token from Craft's own `users/session-info` once, and
-only on a page with a container on it, before it posts anything.
+only on a page with a container on it, before it posts anything. It only fetches from, and only
+sends the token to, the page's own origin: a `sessionInfoUrl` from the page or from
+`window.YoSiteConfig` that points anywhere else is dropped, and a button whose `data-yo-post` is on
+another origin posts nothing. A `sessionInfoUrl` you pass to `YoSite.start()` is your own code and
+is used as given.
 
 `window.YoSite` and `window.YoSiteConfig` are set either way; the message templates' click handlers
 read the token from `window.YoSiteConfig`. If a page ends up with both Yo's copy and yours, the

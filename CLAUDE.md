@@ -172,7 +172,7 @@ cd ~/Sites/plugin-testing
 ddev exec php /var/www/craft-yo/tests/integration/checks.php    # 106 checks
 ddev exec php /var/www/craft-yo/tests/integration/channels.php  # 63: email, digest, webhook, SSRF
 ddev exec php /var/www/craft-yo/tests/integration/channels-http.php  # 11: test action over HTTP
-ddev exec node /var/www/craft-yo/tests/runtime/runtime.mjs   # 15: yo-site.js / yo-site.mjs against a stub DOM
+ddev exec node /var/www/craft-yo/tests/runtime/runtime.mjs   # 39: yo-site.js / yo-site.mjs against a stub DOM
 ddev exec bash -c 'find /var/www/craft-yo/src -name "*.php" -print0 | xargs -0 -n1 php -l'
 
 cd ~/Sites/craft-yo

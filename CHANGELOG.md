@@ -1,5 +1,21 @@
 # Release Notes for Yo
 
+## 5.3.1 - 2026-11-08
+
+### Security
+
+- The front-end script reads `data-yo-site-config` only from `<html>` or `<body>`. It used to take
+  the first one anywhere in the page, so an attribute that survived a sanitiser in user content
+  could replace the page's config — including, on the injected path, the visitor's CSRF token,
+  which stopped every message button and dismissal working. Put `{{ craft.yo.runtimeConfig() }}`
+  on `<html>` or `<body>`; anywhere else it is now ignored.
+- The script only fetches the CSRF token from, and only sends it to, the page's own origin. A
+  `sessionInfoUrl` from the page or from `window.YoSiteConfig` that points elsewhere is dropped,
+  and a `data-yo-post` or dismiss URL on another origin is not posted to. Options passed to
+  `YoSite.start()` are trusted as before.
+- A `window.YoSiteConfig` that is not a plain object — an element named by an `id` in user
+  content — is ignored rather than read as config.
+
 ## 5.3.0 - 2026-11-08
 
 ### Added

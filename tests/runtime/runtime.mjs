@@ -45,10 +45,23 @@ async function check(label, test) {
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /**
- * A page: the config attribute (if any), the container (if any) with some messages in it, and
- * everything the script tries to fetch.
+ * A page: the config attribute (if any) and the element it is on, the container (if any) with some
+ * messages in it, and everything the script tries to fetch.
+ *
+ * `configOn` is `body`, `html` or `footer` (any other element, after the content). `forged` is a
+ * `data-yo-site-config` somebody got into the page content — after `<html>` and `<body>` in
+ * document order, before a footer. `origin` gives the page a `location` and the script a `URL`
+ * parser; without it the script has neither and takes its fallback.
  */
-function page({ config = null, container = true, messages = [{ sticky: false }], session = 'from-session' } = {}) {
+function page({
+    config = null,
+    configOn = 'body',
+    forged = null,
+    container = true,
+    messages = [{ sticky: false }],
+    session = 'from-session',
+    origin = null,
+} = {}) {
     const requests = [];
     const timers = [];
 
@@ -56,15 +69,27 @@ function page({ config = null, container = true, messages = [{ sticky: false }],
         const classes = [];
         const attrs = {
             'data-yo-sticky': m.sticky ? '1' : '0',
-            'data-yo-dismiss-url': `/actions/yo/stream/dismiss?uid=m${i}&channel=site`,
+            'data-yo-dismiss-url': m.dismissUrl ?? `/actions/yo/stream/dismiss?uid=m${i}&channel=site`,
         };
+
+        // A button with an action of its own: `data-yo-post`, wired by the script.
+        const buttons = (m.posts || []).map((url) => {
+            const listeners = [];
+            return {
+                dataset: {},
+                getAttribute: (a) => (a === 'data-yo-post' ? url : null),
+                addEventListener: (event, fn) => listeners.push(fn),
+                click: () => listeners.forEach((fn) => fn()),
+            };
+        });
 
         return {
             classes,
+            buttons,
             removed: false,
             classList: { add: (c) => classes.push(c) },
             getAttribute: (a) => (a in attrs ? attrs[a] : null),
-            querySelectorAll: () => [],
+            querySelectorAll: (s) => (s === '[data-yo-post]' ? buttons : []),
             remove() { this.removed = true; },
         };
     });
@@ -73,12 +98,23 @@ function page({ config = null, container = true, messages = [{ sticky: false }],
         ? { querySelectorAll: (s) => (s === '[data-yo-message]' ? els : []) }
         : null;
 
+    const element = (value) => ({ getAttribute: (a) => (a === 'data-yo-site-config' ? value : null) });
+    const html = element(configOn === 'html' ? config : null);
+    const body = element(configOn === 'body' ? config : null);
+
     const document = {
         readyState: 'complete',
+        documentElement: html,
+        body,
+        // Document order, as the browser answers it.
         querySelector(selector) {
-            if (selector === '[data-yo-site-config]' && config !== null) {
-                return { getAttribute: (a) => (a === 'data-yo-site-config' ? config : null) };
+            if (selector !== '[data-yo-site-config]') {
+                return null;
             }
+            if (config !== null && configOn === 'html') return html;
+            if (config !== null && configOn === 'body') return body;
+            if (forged !== null) return element(forged);
+            if (config !== null && configOn === 'footer') return element(config);
             return null;
         },
         getElementById: (id) => (id === 'yo-site-messages' ? box : null),
@@ -94,6 +130,10 @@ function page({ config = null, container = true, messages = [{ sticky: false }],
         },
     };
 
+    if (origin) {
+        window.location = new URL('/some/page', origin);
+    }
+
     /** Fire every pending timer — the auto-dismiss, then the removal it schedules. */
     const flush = () => {
         while (timers.length) {
@@ -103,8 +143,9 @@ function page({ config = null, container = true, messages = [{ sticky: false }],
 
     const posts = () => requests.filter((r) => r.method === 'POST');
     const sessionInfo = () => requests.filter((r) => r.url === '/actions/users/session-info');
+    const gets = () => requests.filter((r) => r.method === 'GET');
 
-    return { window, document, els, requests, timers, flush, posts, sessionInfo };
+    return { window, document, els, requests, timers, flush, posts, sessionInfo, gets, parser: !!origin };
 }
 
 class MutationObserver {
@@ -113,7 +154,10 @@ class MutationObserver {
 
 /** Run yo-site.js as a classic script, as the browser does. */
 function load(p, module = undefined) {
-    const context = { window: p.window, document: p.document, fetch: p.window.fetch, MutationObserver, FormData: class {} };
+    const context = { window: p.window, document: p.document, fetch: p.window.fetch, MutationObserver, FormData: class { append() {} } };
+    if (p.parser) {
+        context.URL = URL;
+    }
     if (module) {
         context.module = module;
     }
@@ -267,6 +311,175 @@ await check('bundled first, then Yo injects its copy: the injected copy still st
     load(p);                                                       // Yo's inline config + script
 
     return p.timers.length === 1 && p.timers[0].ms === 3000 || `timers=${JSON.stringify(p.timers)}`;
+});
+
+console.log('\nWhere the page config is read from');
+
+/** A config somebody got into the page content: a token fetch somewhere else, and their own token. */
+const forgery = JSON.stringify({ sessionInfoUrl: 'https://evil.example/steal', csrfTokenValue: 'forged', prefix: 'pwned', autoDismissAfter: 1 });
+
+await check('config on <body> is used, and a forged one in the content after it is not', async () => {
+    const p = page({ config: runtimeConfig(), configOn: 'body', forged: forgery });
+    load(p).start();
+    p.flush();
+    await settle();
+
+    return p.els[0].classes.includes('shout--leaving')
+        && p.sessionInfo().length === 1
+        && p.posts()[0]?.headers['X-CSRF-Token'] === 'from-session'
+        || `classes=${p.els[0].classes} requests=${JSON.stringify(p.requests)}`;
+});
+
+await check('config on <html> is used', () => {
+    const p = page({ config: runtimeConfig(), configOn: 'html', forged: forgery });
+    load(p).start();
+    p.flush();
+
+    return p.els[0].classes.includes('shout--leaving') || `classes=${p.els[0].classes}`;
+});
+
+await check('data-yo-site-config on any other element is ignored, even the real one', async () => {
+    const p = page({ config: runtimeConfig(), configOn: 'footer' });
+    load(p).start();
+    p.flush();
+    await settle();
+
+    // No delay and no endpoint from anywhere: nothing is dismissed and nothing is fetched.
+    return p.timers.length === 0 && p.requests.length === 0 && !p.els[0].classes.length
+        || `timers=${p.timers.length} classes=${p.els[0].classes} requests=${JSON.stringify(p.requests)}`;
+});
+
+await check('the injected path: a forged attribute cannot replace the inline token or config', async () => {
+    const p = page({ forged: forgery });
+    p.window.YoSiteConfig = { csrfTokenValue: 'inline', prefix: 'yo', autoDismissAfter: 6, sessionInfoUrl: '/actions/users/session-info' };
+    load(p);
+    p.flush();
+    await settle();
+
+    return p.els[0].classes.includes('yo--leaving')
+        && p.requests.every((r) => !r.url.includes('evil'))
+        && p.posts()[0]?.headers['X-CSRF-Token'] === 'inline'
+        || `classes=${p.els[0].classes} requests=${JSON.stringify(p.requests)}`;
+});
+
+await check('a bundled start({...}) with no page attribute ignores a forged one', async () => {
+    const p = page({ forged: forgery });
+    load(p).start({ prefix: 'mine', autoDismissAfter: 2 });
+    p.flush();
+    await settle();
+
+    return p.els[0].classes.includes('mine--leaving')
+        && p.requests.every((r) => !r.url.includes('evil') && r.headers['X-CSRF-Token'] !== 'forged')
+        || `classes=${p.els[0].classes} requests=${JSON.stringify(p.requests)}`;
+});
+
+await check('a clobbered window.YoSiteConfig (an element, not an object) neither starts nor configures it', async () => {
+    const p = page({ config: runtimeConfig() });
+    // What `<a id="YoSiteConfig">` in the content makes of the global: not a plain object.
+    p.window.YoSiteConfig = { [Symbol.toStringTag]: 'HTMLAnchorElement', sessionInfoUrl: 'https://evil.example/', csrfTokenValue: 'forged' };
+    const YoSite = load(p);
+    const before = p.timers.length + p.requests.length;
+    YoSite.start();
+    p.flush();
+    await settle();
+
+    return before === 0
+        && p.requests.every((r) => !r.url.includes('evil'))
+        && p.posts()[0]?.headers['X-CSRF-Token'] === 'from-session'
+        || `before=${before} requests=${JSON.stringify(p.requests)}`;
+});
+
+console.log('\nThe token never leaves the origin');
+
+/** Start a bundled copy with this sessionInfoUrl on <body>; what did it fetch? */
+async function tokenFetches(sessionInfoUrl, origin = null) {
+    const p = page({ config: runtimeConfig({ sessionInfoUrl }), origin });
+    load(p).start();
+    await settle();
+    return p.gets().map((r) => r.url);
+}
+
+const crossOrigin = {
+    'an absolute URL on another host': 'https://evil.example/session-info',
+    'a protocol-relative //host': '//evil.example/session-info',
+    'a /\\host (browsers read it as //host)': '/\\evil.example/session-info',
+    'a //host behind a leading tab': '\t//evil.example/session-info',
+    'a //host behind a leading control character and a newline': '\u0001/\n/evil.example/session-info',
+    'a javascript: URL': 'javascript:alert(1)',
+};
+
+for (const [label, url] of Object.entries(crossOrigin)) {
+    await check(`with a URL parser: ${label} is not fetched`, async () => {
+        const fetched = await tokenFetches(url, 'https://site.test');
+        return fetched.length === 0 || JSON.stringify(fetched);
+    });
+
+    await check(`without one: ${label} is not fetched`, async () => {
+        const fetched = await tokenFetches(url);
+        return fetched.length === 0 || JSON.stringify(fetched);
+    });
+}
+
+await check('with a URL parser: the same origin, absolute or a path, is fetched', async () => {
+    const absolute = await tokenFetches('https://site.test/actions/users/session-info', 'https://site.test');
+    const path = await tokenFetches('/actions/users/session-info', 'https://site.test');
+    const otherScheme = await tokenFetches('http://site.test/actions/users/session-info', 'https://site.test');
+
+    return absolute.length === 1 && path.length === 1 && otherScheme.length === 0
+        || `absolute=${absolute} path=${path} otherScheme=${otherScheme}`;
+});
+
+await check('without one: a path is fetched, an absolute URL is not (it cannot be checked)', async () => {
+    const path = await tokenFetches('/actions/users/session-info');
+    const absolute = await tokenFetches('https://site.test/actions/users/session-info');
+
+    return path.length === 1 && absolute.length === 0 || `path=${path} absolute=${absolute}`;
+});
+
+await check('an injected window.YoSiteConfig gets the same check', async () => {
+    const p = page();
+    p.window.YoSiteConfig = { autoDismissAfter: 1, sessionInfoUrl: '//evil.example/session-info' };
+    load(p);
+    await settle();
+
+    return p.gets().length === 0 || JSON.stringify(p.requests);
+});
+
+await check('a sessionInfoUrl passed to start() is the site\'s own and is trusted', async () => {
+    const p = page({ config: runtimeConfig() });
+    load(p).start({ sessionInfoUrl: 'https://auth.site.test/session-info' });
+    await settle();
+
+    return p.gets().length === 1 && p.gets()[0].url === 'https://auth.site.test/session-info'
+        || JSON.stringify(p.requests);
+});
+
+await check('a data-yo-post button to another origin posts nothing; one on this origin carries the token', async () => {
+    const p = page({
+        messages: [{ sticky: true, posts: ['https://evil.example/collect', '//evil.example/collect', '/actions/my-plugin/do'] }],
+        origin: 'https://site.test',
+    });
+    p.window.YoSiteConfig = { csrfTokenValue: 'inline' };
+    load(p);
+    p.els[0].buttons.forEach((b) => b.click());
+    await settle();
+
+    const posts = p.posts();
+
+    return posts.length === 1
+        && posts[0].url === '/actions/my-plugin/do'
+        && posts[0].headers['X-CSRF-Token'] === 'inline'
+        || JSON.stringify(posts);
+});
+
+await check('a dismiss URL on another origin is not posted to', async () => {
+    const p = page({ messages: [{ dismissUrl: '//evil.example/dismiss' }] });
+    p.window.YoSiteConfig = { csrfTokenValue: 'inline', autoDismissAfter: 1 };
+    load(p);
+    p.flush();
+    await settle();
+
+    return p.posts().length === 0 && p.els[0].removed || JSON.stringify(p.requests);
 });
 
 console.log('\nThe ES module');
