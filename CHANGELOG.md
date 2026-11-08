@@ -1,6 +1,6 @@
 # Release Notes for Yo
 
-## Unreleased
+## 5.3.0 - 2026-11-08
 
 ### Added
 
