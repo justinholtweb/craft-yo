@@ -121,6 +121,24 @@
     on: settings.siteAutoInject,
 }) }}
 
+{{ forms.lightswitchField({
+    label: 'Load the front-end script for me'|t('yo'),
+    instructions: '`{{ craft.yo.init() }}` also adds DataStar and `yo-site.js` from Craft’s asset URL. Turn this off to bundle `yo-site.mjs` with your own JavaScript instead — then add `{{ craft.yo.runtimeConfig() }}` to the page and call `YoSite.start()`.'|t('yo'),
+    id: 'siteInjectRuntime',
+    name: 'siteInjectRuntime',
+    on: settings.siteInjectRuntime,
+}) }}
+
+{{ forms.textField({
+    label: 'DataStar alias'|t('yo'),
+    instructions: 'Only when you bundle the script yourself. `yo-ds` if you bundle Yo’s own `datastar.js`; empty if your site already runs a stock DataStar 1.0; or your build’s alias (`star` for `data-star-*`). Never load two copies of DataStar on one page.'|t('yo'),
+    id: 'siteDatastarAlias',
+    name: 'siteDatastarAlias',
+    value: settings.siteDatastarAlias,
+    errors: settings.getErrors('siteDatastarAlias'),
+    size: 12,
+}) }}
+
 {{ forms.textField({
     label: 'Class prefix'|t('yo'),
     instructions: 'Front-end markup is unstyled by design — these are the class names you hang your own CSS on. `yo-message`, `yo-message--error`, and so on.'|t('yo'),

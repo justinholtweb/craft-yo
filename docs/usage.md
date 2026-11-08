@@ -179,3 +179,65 @@ auto-dismissal to keep working.
 
 Asking for the list *is* the delivery — they are marked as shown. Pass `false` to peek without
 taking them.
+
+### Bundling the script yourself
+
+If all of your JavaScript ships from a CDN or your own bundle, take Yo's front-end script with it
+instead of letting `craft.yo.init()` add its own `<script>` tags.
+
+1. Turn off **Load the front-end script for me** (`siteInjectRuntime`). `craft.yo.init()` then
+   outputs the container and nothing else — no script tag, no inline `window.YoSiteConfig`.
+2. Copy `yo-site.js` and `yo-site.mjs` from `vendor/justinholtweb/craft-yo/src/web/assets/dist/`
+   into your source, side by side.
+3. Decide where DataStar comes from — see below.
+4. Write the configuration into the page, anywhere:
+
+   ```twig
+   <body {{ craft.yo.runtimeConfig() }}>
+   ```
+
+5. Start it:
+
+   ```js
+   import YoSite from './vendor/yo/yo-site.mjs';   // ES-module bundlers (Vite, Rollup, esbuild, webpack)
+   // const YoSite = require('./vendor/yo/yo-site.js');   // CommonJS bundlers
+   // or a plain <script src="…/yo-site.js">, then window.YoSite
+
+   YoSite.start();
+   ```
+
+`YoSite.start()` with no arguments reads `data-yo-site-config`, so the class prefix and the
+auto-dismiss delay still follow Yo's settings. Anything you pass — `YoSite.start({ autoDismissAfter: 3 })`
+— wins over the page. `runtimeConfig()` renders nothing while the front-end channel is off.
+
+The attribute carries nothing about the visitor, so the page stays cacheable — which is why the CSRF
+token is not in it. The script fetches the token from Craft's own `users/session-info` once, and
+only on a page with a container on it, before it posts anything.
+
+`window.YoSite` and `window.YoSiteConfig` are set either way; the message templates' click handlers
+read the token from `window.YoSiteConfig`. If a page ends up with both Yo's copy and yours, the
+first one loaded wins and the second hands back the same instance.
+
+**Re-copy the files when you update Yo.** A bundled copy is yours; Composer will not touch it.
+
+#### DataStar
+
+`yo-site.js` does not use DataStar itself — the container and the messages carry DataStar
+attributes, and DataStar on the page does the polling and the clicks. So the script neither
+imports DataStar nor needs to be handed it. What matters is that exactly **one** DataStar runs on
+the page and that the markup is written in its dialect:
+
+- **Your site has no DataStar of its own.** Copy Yo's `datastar.js` as well and import it before
+  `yo-site.mjs` (`import './vendor/yo/datastar.js';`). Leave **DataStar alias** at `yo-ds` — Yo's
+  copy is aliased to `data-yo-ds-*` and ignores every other `data-*` attribute on your pages.
+- **Your site already runs DataStar.** Do not import Yo's copy: two copies on one page both answer
+  every `datastar-fetch` event, so each applies the other's server responses. Set **DataStar alias**
+  to whatever yours reads — empty for a stock build (`data-on:click`), or your build's alias
+  (`star` for `data-star-on:click`) — and Yo writes its markup for your DataStar instead.
+  It must be **DataStar 1.0** (Yo is built against 1.0.1): the markup uses 1.0's `data-init`,
+  `data-on:click`, `data-on-interval__duration` and `@get`/`@post` with `headers`, and the server
+  answers with 1.0's `datastar-patch-elements` / `datastar-patch-signals` events. Release
+  candidates and 0.x use different names and will silently do nothing.
+
+If you override `yo/_messages.twig`, write DataStar attributes as `{{ ds }}on:click`, not
+`data-yo-ds-on:click` — `ds` is the prefix for whichever DataStar the page runs.

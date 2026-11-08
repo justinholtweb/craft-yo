@@ -5,7 +5,12 @@
 
    What is here is deliberately plain: semantic elements, one class per thing, no inline styles and
    no stylesheet behind it. `prefix` is the site's own class prefix from the settings, so the class
-   names can be made to match whatever the rest of the site is called. #}
+   names can be made to match whatever the rest of the site is called.
+
+   `ds` is the DataStar attribute prefix — `data-yo-ds-` for the copy Yo loads, or whatever the
+   site's own DataStar answers to when it bundles the script itself (the "DataStar alias"
+   setting). Write `{{ ds }}on:click`, never `data-yo-ds-on:click`, or a bundled DataStar never
+   sees the handler. `window.YoSiteConfig.csrfTokenValue` is set by yo-site.js on both paths. #}
 
 {% for message in messages %}
     <div class="{{ prefix }}-message {{ prefix }}-message--{{ message.type }}"
@@ -28,12 +33,12 @@
                     {% if action.url %}
                         <a class="{{ prefix }}-message__action{{ action.primary ? ' ' ~ prefix ~ '-message__action--primary' }}"
                            href="{{ action.url }}"
-                           data-yo-ds-on:click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</a>
+                           {{ ds }}on:click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': (window.YoSiteConfig || {}).csrfTokenValue}})">{{ action.label }}</a>
                     {% else %}
                         <button type="button"
                                 class="{{ prefix }}-message__action{{ action.primary ? ' ' ~ prefix ~ '-message__action--primary' }}"
                                 {% if action.action %}data-yo-post="{{ actionUrl(action.action) }}" data-yo-params="{{ action.params|json_encode }}"{% endif %}
-                                data-yo-ds-on:click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">{{ action.label }}</button>
+                                {{ ds }}on:click="@post('{{ actUrl }}', {headers: {'X-CSRF-Token': (window.YoSiteConfig || {}).csrfTokenValue}})">{{ action.label }}</button>
                     {% endif %}
                 {% endfor %}
             </p>
@@ -42,6 +47,6 @@
         <button type="button"
                 class="{{ prefix }}-message__dismiss"
                 aria-label="{{ 'Dismiss'|t('yo') }}"
-                data-yo-ds-on:click="@post('{{ actionUrl('yo/stream/dismiss', { uid: message.uid, channel: 'site' }) }}', {headers: {'X-CSRF-Token': window.YoSiteConfig.csrfTokenValue}})">&times;</button>
+                {{ ds }}on:click="@post('{{ actionUrl('yo/stream/dismiss', { uid: message.uid, channel: 'site' }) }}', {headers: {'X-CSRF-Token': (window.YoSiteConfig || {}).csrfTokenValue}})">&times;</button>
     </div>
 {% endfor %}

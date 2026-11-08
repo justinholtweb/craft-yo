@@ -52,6 +52,16 @@ decision, and a plugin that silently injects a div into somebody's careful layou
 decision that was not its to make. `{{ craft.yo.init() }}` is one line and it goes where you want
 it.
 
+**Load the front-end script for me** — on by default. `craft.yo.init()` adds DataStar and
+`yo-site.js` from Craft's asset URL along with the container. Turn it off to bundle the script
+with your own JavaScript instead; Yo then writes nothing into the page but the container. See
+[Bundling the script yourself](usage#bundling-the-script-yourself).
+
+**DataStar alias** — only read while the setting above is off. `yo-ds` (the default) if you bundle
+Yo's own `datastar.js`; empty if your site already runs a stock DataStar 1.0; or your own build's
+alias. While Yo loads the script itself the markup is always written for Yo's copy, whatever this
+says.
+
 **Class prefix** — the class names on front-end markup. `yo` gives you `yo-message`,
 `yo-message--error` and so on. Change it if it collides with your own naming.
 

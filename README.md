@@ -130,6 +130,11 @@ That registers the behaviour and puts a container where you put the tag. Style
 `.yo-message`, `.yo-message--error` and friends however you like — or drop a
 `yo/_messages.twig` into your own templates directory and take the markup over outright.
 
+Serve all your JavaScript from your own bundle? Turn off **Load the front-end script for me**,
+import `yo-site.mjs` (or `yo-site.js`), add `{{ craft.yo.runtimeConfig() }}` to the page and call
+`YoSite.start()`. Bring Yo's `datastar.js` along, or point Yo at the DataStar 1.0 you already run —
+never both. See [Bundling the script yourself](docs/usage.md#bundling-the-script-yourself).
+
 ## Ajax without the Ajax
 
 The panel updates itself with [DataStar](https://data-star.dev), vendored — no CDN, no build step,

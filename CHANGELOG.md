@@ -1,5 +1,28 @@
 # Release Notes for Yo
 
+## Unreleased
+
+### Added
+
+- The front-end script can be bundled with your own JavaScript instead of loaded from Craft's
+  asset URL. Turn off **Load the front-end script for me**, import `yo-site.mjs` (ES modules) or
+  `yo-site.js` (CommonJS or a plain script), add `{{ craft.yo.runtimeConfig() }}` to the page and
+  call `YoSite.start()`. With no arguments it reads the class prefix and the auto-dismiss delay from
+  the page, so they still follow Yo's settings; the visitor's CSRF token is fetched from
+  `users/session-info` rather than written into the page, so the page stays cacheable.
+- A **DataStar alias** setting, for a bundled script on a site that already runs DataStar 1.0:
+  Yo's front-end markup is written for that DataStar (`data-on:click`, or your build's alias)
+  instead of for Yo's own aliased copy, so the page never needs two.
+- `window.YoSite`, with `start()`. Loading the script twice — injected and bundled — leaves one
+  instance.
+
+### Changed
+
+- The default front-end template writes its DataStar attributes as `{{ ds }}on:click`. An
+  overridden `yo/_messages.twig` that hard-codes `data-yo-ds-on:click` keeps working while Yo loads
+  the script itself.
+- The injected `window.YoSiteConfig` also carries `sessionInfoUrl`.
+
 ## 5.2.0 - 2026-10-09
 ### Added
 

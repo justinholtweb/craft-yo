@@ -1131,6 +1131,186 @@ check('the type icon is still rendered as markup, because that one is ours', fun
     return str_contains($html, '<svg') ?: 'the icon was escaped';
 });
 
+// ---------------------------------------------------------------------------- bundling the script
+
+// Before 'The front end': its last check drops an override template into the site and Craft's
+// View remembers the path for the rest of the run, so every render after it is the override's.
+section('Bundling the front-end script');
+
+check('by default Yo still loads the script itself, for Yo’s own aliased DataStar', function() use ($plugin) {
+    $settings = configure(['siteChannel' => true]);
+
+    try {
+        return ($settings->siteInjectRuntime === true
+            && $settings->siteDatastarAlias === 'yo-ds'
+            && $plugin->frontend->datastarAttribute() === 'data-yo-ds-')
+            ?: 'the default changed';
+    } finally {
+        configure(['siteChannel' => false]);
+    }
+});
+
+check('craft.yo.runtimeConfig() writes the config the injected script is built from', function() use ($plugin) {
+    configure(['siteChannel' => true, 'siteClassPrefix' => 'shout', 'autoDismissAfter' => 9]);
+
+    try {
+        $html = (string)(new justinholtweb\yo\twig\YoVariable())->runtimeConfig();
+
+        if (!preg_match('/^ data-yo-site-config="([^"]*)"$/', $html, $m)) {
+            return 'got ' . $html;
+        }
+
+        $decoded = craft\helpers\Json::decode(html_entity_decode($m[1], ENT_QUOTES));
+
+        // One PHP method behind both the attribute and the inline `window.YoSiteConfig`, so a
+        // bundled script cannot drift from the CP settings.
+        return ($decoded === $plugin->frontend->runtimeConfig()
+            && $decoded['prefix'] === 'shout'
+            && $decoded['autoDismissAfter'] === 9
+            && str_contains($decoded['sessionInfoUrl'], 'users/session-info'))
+            ?: 'decoded ' . json_encode($decoded);
+    } finally {
+        configure(['siteChannel' => false, 'siteClassPrefix' => 'yo']);
+    }
+});
+
+check('the injected config is the same array plus the visitor’s CSRF token, and nothing else', function() use ($plugin) {
+    configure(['siteChannel' => true]);
+
+    try {
+        $injected = $plugin->frontend->injectedConfig('a-token');
+        $shared = $plugin->frontend->runtimeConfig();
+
+        return (array_diff_key($injected, $shared) === ['csrfTokenValue' => 'a-token']
+            && array_intersect_key($injected, $shared) === $shared
+            // The keys yo-site.js has always read off `window.YoSiteConfig` are all still there.
+            && array_diff(['csrfTokenName', 'csrfTokenValue', 'prefix', 'autoDismissAfter'], array_keys($injected)) === [])
+            ?: json_encode($injected);
+    } finally {
+        configure(['siteChannel' => false]);
+    }
+});
+
+check('craft.yo.runtimeConfig() carries nothing visitor-specific, so the page stays cacheable', function() use ($testUser) {
+    configure(['siteChannel' => true]);
+    $variable = new justinholtweb\yo\twig\YoVariable();
+    $identity = Craft::$app->getUser()->getIdentity();
+
+    try {
+        Craft::$app->getUser()->setIdentity(null);
+        $guest = (string)$variable->runtimeConfig();
+        Craft::$app->getUser()->setIdentity($testUser);
+        $signedIn = (string)$variable->runtimeConfig();
+
+        return ($guest === $signedIn
+            && !str_contains($guest, 'csrfTokenValue')
+            && !str_contains($guest, $testUser->uid))
+            ?: "guest=$guest signedIn=$signedIn";
+    } finally {
+        // Later sections read as whoever the fixtures signed in.
+        Craft::$app->getUser()->setIdentity($identity);
+        configure(['siteChannel' => false]);
+    }
+});
+
+check('craft.yo.runtimeConfig() renders nothing while the front-end channel is off', function() {
+    configure(['siteChannel' => false]);
+
+    return (string)(new justinholtweb\yo\twig\YoVariable())->runtimeConfig() === '' ?: 'it rendered';
+});
+
+check('with the script not injected, init() writes the container and nothing else', function() use ($plugin) {
+    configure(['siteChannel' => true, 'siteInjectRuntime' => false]);
+    $view = Craft::$app->getView();
+    $plugin->frontend->reset();
+    $bundlesBefore = array_keys($view->assetBundles);
+    $jsBefore = json_encode($view->js);
+
+    try {
+        $html = (string)(new justinholtweb\yo\twig\YoVariable())->init();
+
+        return (str_contains($html, 'id="yo-site-messages"')
+            && array_keys($view->assetBundles) === $bundlesBefore
+            && !isset($view->assetBundles[justinholtweb\yo\web\assets\site\YoSiteAsset::class])
+            && json_encode($view->js) === $jsBefore)
+            ?: 'registered something: ' . json_encode(array_keys($view->assetBundles)) . ' ' . json_encode($view->js);
+    } finally {
+        $plugin->frontend->reset();
+        configure(['siteChannel' => false]);
+    }
+});
+
+check('a bundled stock DataStar gets stock attributes, on the container and on every message', function() use ($plugin) {
+    configure(['siteChannel' => true, 'siteInjectRuntime' => false, 'siteDatastarAlias' => '']);
+    $plugin->frontend->reset();
+
+    try {
+        $container = $plugin->frontend->container();
+        $list = $plugin->frontend->render([(new Message(['title' => 'Hello']))->toWire()]);
+
+        return (str_contains($container, ' data-signals=')
+            && str_contains($container, ' data-init=')
+            && str_contains($container, ' data-on-interval__duration.')
+            && str_contains($list, ' data-on:click=')
+            && !str_contains($container . $list, 'data-yo-ds-'))
+            ?: substr($container, 0, 300) . ' … ' . substr($list, 0, 300);
+    } finally {
+        $plugin->frontend->reset();
+        configure(['siteChannel' => false]);
+    }
+});
+
+check('a bundled aliased DataStar gets its alias', function() use ($plugin) {
+    configure(['siteChannel' => true, 'siteInjectRuntime' => false, 'siteDatastarAlias' => 'star']);
+
+    try {
+        $list = $plugin->frontend->render([(new Message(['title' => 'Hello']))->toWire()]);
+
+        return str_contains($list, ' data-star-on:click=') ?: substr($list, 0, 300);
+    } finally {
+        configure(['siteChannel' => false]);
+    }
+});
+
+check('while Yo loads its own DataStar, the alias setting cannot break the markup', function() use ($plugin) {
+    configure(['siteChannel' => true, 'siteInjectRuntime' => true, 'siteDatastarAlias' => '']);
+
+    try {
+        $list = $plugin->frontend->render([(new Message(['title' => 'Hello']))->toWire()]);
+
+        return ($plugin->frontend->datastarAttribute() === 'data-yo-ds-' && str_contains($list, ' data-yo-ds-on:click='))
+            ?: substr($list, 0, 300);
+    } finally {
+        configure(['siteChannel' => false]);
+    }
+});
+
+check('a DataStar alias that is not attribute-shaped is refused; empty is allowed', function() {
+    $wrong = [];
+
+    foreach (['' => true, 'star' => true, 'yo-ds' => true, 'Star' => false, 'my alias' => false, 'star-' => false] as $alias => $valid) {
+        $settings = new Settings();
+        $settings->siteDatastarAlias = (string)$alias;
+
+        if ($settings->validate(['siteDatastarAlias']) !== $valid) {
+            $wrong[] = "'$alias'";
+        }
+    }
+
+    return $wrong === [] ?: 'wrong answer for ' . implode(', ', $wrong);
+});
+
+check('the script ships an ES-module wrapper beside it, not a second copy', function() {
+    $mjs = @file_get_contents(dirname(__DIR__, 2) . '/src/web/assets/dist/yo-site.mjs');
+
+    return ($mjs !== false
+        && str_contains($mjs, "import './yo-site.js';")
+        && str_contains($mjs, 'export default window.YoSite;')
+        && !str_contains($mjs, 'function')
+        && !preg_match('/^import .*datastar/mi', $mjs))
+        ?: 'yo-site.mjs is missing or no longer just wraps yo-site.js';
+});
+
 // ---------------------------------------------------------------------------- the front end
 
 section('The front end');

@@ -76,6 +76,28 @@ class Settings extends Model
      */
     public bool $siteAutoInject = false;
 
+    /**
+     * @var bool Whether `craft.yo.init()` also loads the front-end script — DataStar and
+     *           `yo-site.js` from Craft's asset URL, plus an inline `window.YoSiteConfig`.
+     *
+     * On by default, which is how Yo has always worked. Off is for a site that serves all of its
+     * JavaScript from its own bundle: Yo then writes nothing into the page but the container, the
+     * site imports `yo-site.mjs` (or `yo-site.js`), adds `{{ craft.yo.runtimeConfig() }}` and calls
+     * `YoSite.start()`. See `docs/usage.md`, "Bundling the script yourself".
+     */
+    public bool $siteInjectRuntime = true;
+
+    /**
+     * @var string The DataStar attribute alias the front-end markup is written for, when Yo is not
+     *             loading the script itself: `yo-ds` (the default) for Yo's own vendored DataStar,
+     *             empty for a stock DataStar 1.0 build of the site's own (`data-on:click`), or that
+     *             build's alias (`star` for `data-star-on:click`).
+     *
+     * Ignored while `siteInjectRuntime` is on — Yo then loads its own copy, which only answers to
+     * `data-yo-ds-*`, so the markup has to match that whatever this says.
+     */
+    public string $siteDatastarAlias = 'yo-ds';
+
     /** @var string The CSS class prefix on front-end markup. */
     public string $siteClassPrefix = 'yo';
 
@@ -143,6 +165,8 @@ class Settings extends Model
             [['maxPerRecipient'], 'integer', 'min' => 1],
             [['defaultPosition'], 'in', 'range' => array_keys(self::positionOptions())],
             [['siteClassPrefix'], 'match', 'pattern' => '/^[a-zA-Z][a-zA-Z0-9_\-]*$/'],
+            // Empty is allowed (and skipped here): it is a stock, unaliased DataStar build.
+            [['siteDatastarAlias'], 'match', 'pattern' => '/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/'],
             [['emailMode'], 'in', 'range' => [self::EMAIL_IMMEDIATE, self::EMAIL_DIGEST]],
             [['digestFrequency'], 'in', 'range' => [self::DIGEST_DAILY, self::DIGEST_WEEKLY]],
             [['digestWeekday'], 'integer', 'min' => 1, 'max' => 7],

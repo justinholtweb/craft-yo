@@ -3,6 +3,8 @@
 namespace justinholtweb\yo\twig;
 
 use Craft;
+use craft\helpers\Html;
+use craft\helpers\Json;
 use justinholtweb\yo\models\Message;
 use justinholtweb\yo\models\MessageType;
 use justinholtweb\yo\Plugin;
@@ -29,6 +31,38 @@ class YoVariable
     public function init(): Markup
     {
         return $this->raw(Plugin::getInstance()->frontend->container());
+    }
+
+    /**
+     * The front-end script's configuration, for a site that bundles `yo-site.js` itself rather than
+     * letting Yo load it (turn off “Load the front-end script for me”).
+     *
+     * ```twig
+     * <body {{ craft.yo.runtimeConfig() }}>
+     * ```
+     *
+     * The bundled script's `YoSite.start()` reads it, so the class prefix and the auto-dismiss
+     * delay still come from Yo's settings. It is the same array the injected `window.YoSiteConfig`
+     * is built from, minus the visitor's CSRF token — site-specific, never visitor-specific, so the
+     * page stays cacheable. Renders nothing while the front-end channel is off, and never throws.
+     */
+    public function runtimeConfig(): Markup
+    {
+        try {
+            $plugin = Plugin::getInstance();
+
+            if (!$plugin->getSettings()->siteChannel) {
+                return $this->raw('');
+            }
+
+            return $this->raw(Html::renderTagAttributes([
+                'data-yo-site-config' => Json::encode($plugin->frontend->runtimeConfig()),
+            ]));
+        } catch (\Throwable $e) {
+            Craft::warning('Yo could not render its front-end config: ' . $e->getMessage(), Plugin::LOG_CATEGORY);
+
+            return $this->raw('');
+        }
     }
 
     /**

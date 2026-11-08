@@ -64,6 +64,9 @@ class Frontend extends Component
         $variables = [
             'messages' => $messages,
             'prefix' => Plugin::getInstance()->getSettings()->siteClassPrefix,
+            // The DataStar attribute prefix the markup is written for: `data-yo-ds-` for Yo's own
+            // copy, or whatever the site's own DataStar answers to. See `datastarAttribute()`.
+            'ds' => $this->datastarAttribute(),
         ];
 
         if ($view->doesTemplateExist(self::OVERRIDE_TEMPLATE, View::TEMPLATE_MODE_SITE)) {
@@ -88,22 +91,23 @@ class Frontend extends Component
         $this->_initialised = true;
 
         $settings = Plugin::getInstance()->getSettings();
-        $view = Craft::$app->getView();
-        $view->registerAssetBundle(YoSiteAsset::class);
 
-        $view->registerJs(
-            'window.YoSiteConfig = ' . Json::encode([
-                'csrfTokenName' => Craft::$app->getConfig()->getGeneral()->csrfTokenName,
-                'csrfTokenValue' => Craft::$app->getRequest()->getCsrfToken(),
-                'prefix' => $settings->siteClassPrefix,
-                'autoDismissAfter' => $settings->autoDismissAfter,
-            ]) . ';',
-            View::POS_HEAD,
-        );
+        // Off, the site bundles yo-site.js itself and Yo writes nothing into the page but the
+        // container below — no script tag, no inline config. See `runtimeConfig()`.
+        if ($settings->siteInjectRuntime) {
+            $view = Craft::$app->getView();
+            $view->registerAssetBundle(YoSiteAsset::class);
+
+            $view->registerJs(
+                'window.YoSiteConfig = ' . Json::encode($this->injectedConfig(Craft::$app->getRequest()->getCsrfToken())) . ';',
+                View::POS_HEAD,
+            );
+        }
 
         $prefix = $settings->siteClassPrefix;
         $poll = $settings->pollInterval;
         $pollUrl = UrlHelper::actionUrl('yo/stream/poll', ['channel' => Message::CHANNEL_SITE]);
+        $ds = $this->datastarAttribute();
 
         // The container carries its own behaviour as DataStar attributes rather than being wired
         // up by a script that has to find it first. It works the moment it is in the DOM, wherever
@@ -113,15 +117,70 @@ class Frontend extends Component
             'class' => $prefix,
             'role' => 'status',
             'aria-live' => 'polite',
-            'data-yo-ds-signals' => Json::encode(['yoCount' => 0, 'yoHasMessages' => false]),
-            'data-yo-ds-init' => "@get('{$pollUrl}')",
+            $ds . 'signals' => Json::encode(['yoCount' => 0, 'yoHasMessages' => false]),
+            $ds . 'init' => "@get('{$pollUrl}')",
         ];
 
         if ($poll > 0) {
-            $attributes["data-yo-ds-on-interval__duration.{$poll}s"] = "@get('{$pollUrl}')";
+            $attributes[$ds . "on-interval__duration.{$poll}s"] = "@get('{$pollUrl}')";
         }
 
         return Html::tag('div', $this->render(), $attributes);
+    }
+
+    /**
+     * What the front-end script needs to know about this site, for both ways of loading it: the
+     * inline `window.YoSiteConfig` Yo injects, and the `data-yo-site-config` attribute
+     * `craft.yo.runtimeConfig()` writes for a site that bundles `yo-site.js` itself. One method, so
+     * the two cannot drift.
+     *
+     * Site-specific, never visitor-specific: a page carrying it stays cacheable. That is why the
+     * CSRF token is not here — the injected path adds it (`injectedConfig()`), and a bundled
+     * runtime fetches it from `sessionInfoUrl` (Craft's own `users/session-info`) when it needs it.
+     *
+     * @return array<string, mixed>
+     */
+    public function runtimeConfig(): array
+    {
+        $settings = Plugin::getInstance()->getSettings();
+
+        return [
+            'csrfTokenName' => Craft::$app->getConfig()->getGeneral()->csrfTokenName,
+            'prefix' => $settings->siteClassPrefix,
+            'autoDismissAfter' => $settings->autoDismissAfter,
+            'sessionInfoUrl' => UrlHelper::actionUrl('users/session-info'),
+        ];
+    }
+
+    /**
+     * The inline config Yo injects: `runtimeConfig()` plus this visitor's CSRF token, which is
+     * what the message templates' DataStar click handlers send as `X-CSRF-Token`.
+     *
+     * @return array<string, mixed>
+     */
+    public function injectedConfig(string $csrfTokenValue): array
+    {
+        return $this->runtimeConfig() + ['csrfTokenValue' => $csrfTokenValue];
+    }
+
+    /**
+     * The attribute prefix the front-end markup's DataStar attributes are written with.
+     *
+     * Yo's vendored DataStar is aliased and only reads `data-yo-ds-*`; while Yo loads it, that is
+     * the only right answer. A site that bundles the script supplies DataStar itself — Yo's copy or
+     * its own — and `siteDatastarAlias` says which dialect that one speaks.
+     */
+    public function datastarAttribute(): string
+    {
+        $settings = Plugin::getInstance()->getSettings();
+
+        if ($settings->siteInjectRuntime) {
+            return 'data-yo-ds-';
+        }
+
+        $alias = trim($settings->siteDatastarAlias);
+
+        return $alias === '' ? 'data-' : "data-{$alias}-";
     }
 
     /** Whether `init()` has already run this request. */
